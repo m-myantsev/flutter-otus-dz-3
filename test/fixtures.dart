@@ -1,8 +1,14 @@
+import 'dart:typed_data';
+
+import 'package:image/image.dart' as img;
 import 'package:recipes/models/comment.dart';
+import 'package:recipes/models/detected_object.dart';
+import 'package:recipes/models/detection_box.dart';
 import 'package:recipes/models/food_data.dart';
 import 'package:recipes/models/ingredient.dart';
 import 'package:recipes/models/measure_unit.dart';
 import 'package:recipes/models/recipe.dart';
+import 'package:recipes/models/recipe_image.dart';
 import 'package:recipes/models/recipe_ingredient.dart';
 import 'package:recipes/models/recipe_step.dart';
 
@@ -217,3 +223,23 @@ Map<int, List<Comment>> fixtureComments() => {
     ),
   ],
 };
+
+/// Белый JPEG заданного размера
+///
+/// Настоящий JPEG, а не произвольные байты, потому что тесты интерфейса и детекции его декодируют
+Uint8List fixtureJpeg({int width = 60, int height = 40}) {
+  final image = img.Image(width: width, height: height);
+  img.fill(image, color: img.ColorRgb8(255, 255, 255));
+  return img.encodeJpg(image, quality: 85);
+}
+
+/// Фото с двумя найденными объектами
+///
+/// Разные [label] первого объекта отличают фото друг от друга в тестах удаления
+RecipeImage fixtureImage({String label = 'cup'}) => RecipeImage(
+  bytes: fixtureJpeg(),
+  objects: [
+    DetectedObject(label: label, score: 0.87, box: const DetectionBox(left: 0.1, top: 0.1, right: 0.5, bottom: 0.5)),
+    const DetectedObject(label: 'bowl', score: 0.65, box: DetectionBox(left: 0.6, top: 0.6, right: 0.9, bottom: 0.9)),
+  ],
+);

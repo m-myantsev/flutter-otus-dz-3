@@ -12,8 +12,12 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   dio: ^5.11.0
+  flutter_litert: ^3.9.4
   hive_ce: ^2.19.3
   hive_ce_flutter: ^2.3.4
+  image: ^4.12.0
+  image_picker: ^1.2.4
+  rive: ^0.14.11
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +30,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/rive/
+    - assets/models/

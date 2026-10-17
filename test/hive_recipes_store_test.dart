@@ -10,6 +10,8 @@ import 'package:recipes/models/ingredient.dart';
 import 'package:recipes/models/measure_unit.dart';
 import 'package:recipes/models/recipe.dart';
 
+import 'fixtures.dart';
+
 void main() {
   const gram = MeasureUnit(id: 1, one: 'грамм', few: 'грамма', many: 'граммов');
   const flour = Ingredient(id: 10, name: 'Мука', measureUnit: gram);
@@ -38,6 +40,7 @@ void main() {
     measureUnits: await Hive.openBox<MeasureUnit>('measure_units'),
     comments: await Hive.openBox<List>('comments'),
     favorites: await Hive.openBox<bool>('favorites'),
+    images: await Hive.openBox<List>('recipe_images'),
   );
 
   test('данные сохраняются и читаются после переоткрытия боксов', () async {
@@ -90,5 +93,21 @@ void main() {
 
     expect(store.loadComments(3).single.text, 'Супер');
     expect(store.loadComments(4), isEmpty);
+  });
+
+  test('фото рецепта сохраняются и читаются, у рецепта без фото пустой список', () async {
+    final store = await openStore();
+    await store.saveImages(1, [fixtureImage()]);
+    expect(store.loadImages(1).single.objects.length, 2);
+    expect(store.loadImages(2), isEmpty);
+  });
+
+  test('обновление с сервера не трогает фото, в том числе у локальных рецептов', () async {
+    final store = await openStore();
+    await store.saveImages(1, [fixtureImage()]);
+    await store.saveImages(-1, [fixtureImage()]);
+    await store.saveAll(fixtureData());
+    expect(store.loadImages(1), hasLength(1));
+    expect(store.loadImages(-1), hasLength(1));
   });
 }

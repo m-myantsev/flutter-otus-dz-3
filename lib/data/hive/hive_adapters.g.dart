@@ -221,3 +221,111 @@ class CommentAdapter extends TypeAdapter<Comment> {
   bool operator ==(Object other) =>
       identical(this, other) || other is CommentAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }
+
+class RecipeImageAdapter extends TypeAdapter<RecipeImage> {
+  @override
+  final typeId = 6;
+
+  @override
+  RecipeImage read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    return RecipeImage(
+      bytes: fields[0] as Uint8List,
+      objects: fields[1] == null ? const [] : (fields[1] as List).cast<DetectedObject>(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, RecipeImage obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.bytes)
+      ..writeByte(1)
+      ..write(obj.objects);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecipeImageAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
+}
+
+class DetectedObjectAdapter extends TypeAdapter<DetectedObject> {
+  @override
+  final typeId = 7;
+
+  @override
+  DetectedObject read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    return DetectedObject(
+      label: fields[0] as String,
+      score: (fields[1] as num).toDouble(),
+      box: fields[2] as DetectionBox,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, DetectedObject obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.label)
+      ..writeByte(1)
+      ..write(obj.score)
+      ..writeByte(2)
+      ..write(obj.box);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DetectedObjectAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
+}
+
+class DetectionBoxAdapter extends TypeAdapter<DetectionBox> {
+  @override
+  final typeId = 8;
+
+  @override
+  DetectionBox read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    return DetectionBox(
+      left: (fields[0] as num).toDouble(),
+      top: (fields[1] as num).toDouble(),
+      right: (fields[2] as num).toDouble(),
+      bottom: (fields[3] as num).toDouble(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, DetectionBox obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.left)
+      ..writeByte(1)
+      ..write(obj.top)
+      ..writeByte(2)
+      ..write(obj.right)
+      ..writeByte(3)
+      ..write(obj.bottom);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DetectionBoxAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
+}

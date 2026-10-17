@@ -2,24 +2,37 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// Показывает нижний шит выбора фото
-Future<void> showPhotoSourceSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+/// Выбор пользователя в нижней панели фото
+enum PhotoSourceChoice { camera, album, delete }
+
+/// Показывает нижнюю панель выбора фото и возвращает выбор или `null` при отмене
+Future<PhotoSourceChoice?> showPhotoSourceSheet(
+  BuildContext context, {
+  bool canTakePhoto = true,
+  bool canDelete = true,
+}) {
+  return showModalBottomSheet<PhotoSourceChoice>(
     context: context,
     backgroundColor: AppColors.background,
     shape: const RoundedRectangleBorder(),
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => const _PhotoSourceSheet(),
+    builder: (context) => _PhotoSourceSheet(canTakePhoto: canTakePhoto, canDelete: canDelete),
   );
 }
 
-/// Нижний шит с источниками фото и его удалением
+/// Нижняя панель с источниками фото и его удалением
 class _PhotoSourceSheet extends StatelessWidget {
-  const _PhotoSourceSheet();
+  const _PhotoSourceSheet({required this.canTakePhoto, required this.canDelete});
 
   /// Разделитель между пунктами
   static const _divider = Divider(height: 0.5, thickness: 0.5, color: AppColors.placeholder);
+
+  /// Доступна ли камера для съёмки
+  final bool canTakePhoto;
+
+  /// Есть ли что удалять
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -28,24 +41,24 @@ class _PhotoSourceSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Без камеры пункт остаётся видимым, но неактивным, чтобы состав панели не прыгал
           _PhotoSourceItem(
             label: 'Сфотографировать',
-            // TODO: Реализовать после реализации выбора фото
-            onPressed: () => Navigator.pop(context),
+            onPressed: canTakePhoto ? () => Navigator.pop(context, PhotoSourceChoice.camera) : null,
           ),
           _divider,
           _PhotoSourceItem(
             label: 'Выбрать из альбома',
-            // TODO: Реализовать после реализации выбора фото
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, PhotoSourceChoice.album),
           ),
-          _divider,
-          _PhotoSourceItem(
-            label: 'Удалить',
-            color: AppColors.danger,
-            // TODO: Реализовать вместе с прикреплением фото к комментарию
-            onPressed: () => Navigator.pop(context),
-          ),
+          if (canDelete) ...[
+            _divider,
+            _PhotoSourceItem(
+              label: 'Удалить',
+              color: AppColors.danger,
+              onPressed: () => Navigator.pop(context, PhotoSourceChoice.delete),
+            ),
+          ],
           const SizedBox(height: 8),
           Center(
             child: FilledButton(
@@ -68,7 +81,7 @@ class _PhotoSourceSheet extends StatelessWidget {
   }
 }
 
-/// Пункт шита выбора фото во всю ширину
+/// Пункт панели выбора фото во всю ширину
 class _PhotoSourceItem extends StatelessWidget {
   const _PhotoSourceItem({required this.label, required this.onPressed, this.color = AppColors.text});
 
@@ -76,19 +89,27 @@ class _PhotoSourceItem extends StatelessWidget {
   final String label;
 
   /// Действие по нажатию
-  final VoidCallback onPressed;
+  ///
+  /// `null` делает пункт неактивным
+  final VoidCallback? onPressed;
 
-  /// Цвет подписи
+  /// Цвет подписи активного пункта
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      child: SizedBox(
-        height: 66,
-        child: Center(
-          child: Text(label, style: TextStyle(fontSize: 16, color: color)),
+    final enabled = onPressed != null;
+    // `InkWell` без `onTap` не сообщает скринридеру ни роль кнопки, ни выключенное состояние
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        onTap: onPressed,
+        child: SizedBox(
+          height: 66,
+          child: Center(
+            child: Text(label, style: TextStyle(fontSize: 16, color: enabled ? color : AppColors.placeholder)),
+          ),
         ),
       ),
     );

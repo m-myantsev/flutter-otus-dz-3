@@ -63,6 +63,11 @@ class _IngredientDialogState extends State<_IngredientDialog> {
   late String _name = widget.initial?.ingredient.name ?? '';
   late final _countController = TextEditingController(text: _countText(widget.initial?.count));
 
+  /// Справочник единиц на момент открытия диалога
+  ///
+  /// Справочник может смениться со встроенного на серверный, пока диалог открыт
+  late final List<MeasureUnit> _units = widget.manager.measureUnits;
+
   /// Единица измерения для нового ингредиента
   MeasureUnit? _newIngredientUnit;
 
@@ -154,10 +159,7 @@ class _IngredientDialogState extends State<_IngredientDialog> {
                   if (existing == null)
                     DropdownButtonFormField<MeasureUnit>(
                       initialValue: _newIngredientUnit,
-                      items: [
-                        for (final unit in widget.manager.measureUnits)
-                          DropdownMenuItem(value: unit, child: Text(unit.one)),
-                      ],
+                      items: [for (final unit in _units) DropdownMenuItem(value: unit, child: Text(unit.one))],
                       onChanged: (unit) => setState(() => _newIngredientUnit = unit),
                       validator: (unit) => unit == null ? 'Выберите единицу измерения' : null,
                       decoration: const InputDecoration(labelText: 'Единица измерения'),

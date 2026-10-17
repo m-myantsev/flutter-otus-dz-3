@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recipes/theme/app_colors.dart';
 import 'package:recipes/widgets/photo_source_sheet.dart';
 
 void main() {
   group('showPhotoSourceSheet', () {
-    /// Открывает шит с кнопками в минимальном окружении
-    Future<void> pumpSheet(WidgetTester tester) async {
+    /// Выбор, которым закрылся последний открытый шит
+    PhotoSourceChoice? choice;
+
+    /// Открывает нижнюю панель с кнопками в минимальном окружении и запоминает его результат
+    Future<void> pumpSheet(WidgetTester tester, {bool canTakePhoto = true, bool canDelete = true}) async {
+      choice = null;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder: (context) =>
-                  TextButton(onPressed: () => showPhotoSourceSheet(context), child: const Text('фото')),
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  choice = await showPhotoSourceSheet(context, canTakePhoto: canTakePhoto, canDelete: canDelete);
+                },
+                child: const Text('фото'),
+              ),
             ),
           ),
         ),
@@ -39,15 +48,67 @@ void main() {
       expect(find.text('Отмена'), findsNothing);
     });
 
-    testWidgets('тап по пункту-заглушке закрывает шит', (tester) async {
-      for (final label in ['Сфотографировать', 'Выбрать из альбома', 'Удалить']) {
+    testWidgets('пункты закрывают шит и возвращают выбор', (tester) async {
+      for (final (label, expected) in [
+        ('Сфотографировать', PhotoSourceChoice.camera),
+        ('Выбрать из альбома', PhotoSourceChoice.album),
+        ('Удалить', PhotoSourceChoice.delete),
+      ]) {
         await pumpSheet(tester);
-
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
-
-        expect(find.text(label), findsNothing, reason: 'пункт $label должен закрывать шит');
+        expect(find.text(label), findsNothing);
+        expect(choice, expected);
       }
+    });
+
+    testWidgets('отмена возвращает null', (tester) async {
+      await pumpSheet(tester);
+      await tester.tap(find.text('Отмена'));
+      await tester.pumpAndSettle();
+      expect(choice, isNull);
+    });
+
+    testWidgets('без возможности удаления пункт и его разделитель не показываются', (tester) async {
+      await pumpSheet(tester, canDelete: false);
+      expect(find.text('Удалить'), findsNothing);
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('без камеры пункт съёмки неактивен и не закрывает шит', (tester) async {
+      await pumpSheet(tester, canTakePhoto: false);
+      final text = tester.widget<Text>(find.text('Сфотографировать'));
+      expect(text.style?.color, AppColors.placeholder);
+      await tester.tap(find.text('Сфотографировать'));
+      await tester.pumpAndSettle();
+      expect(find.text('Сфотографировать'), findsOneWidget);
+    });
+
+    testWidgets('неактивный пункт скринридер видит как выключенную кнопку', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpSheet(tester, canTakePhoto: false);
+
+      expect(
+        tester.getSemantics(find.text('Сфотографировать')),
+        isSemantics(
+          label: 'Сфотографировать',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+          hasTapAction: false,
+        ),
+      );
+      expect(
+        tester.getSemantics(find.text('Выбрать из альбома')),
+        isSemantics(
+          label: 'Выбрать из альбома',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+      semantics.dispose();
     });
 
     testWidgets('на низком экране помещается целиком и отмена остаётся доступной', (tester) async {

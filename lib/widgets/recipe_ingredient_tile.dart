@@ -12,10 +12,14 @@ class RecipeIngredientTile extends StatelessWidget {
   final RecipeIngredient item;
 
   /// Открывает диалог редактирования позиции
-  final VoidCallback onEdit;
+  ///
+  /// `null` выключает кнопку
+  final VoidCallback? onEdit;
 
   /// Удаляет позицию из состава
-  final VoidCallback onDelete;
+  ///
+  /// `null` выключает кнопку
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +48,14 @@ class RecipeIngredientTile extends StatelessWidget {
                 ],
               ),
             ),
+            // Цвет иконки задан явно, поэтому выключенная кнопка сама не тускнеет
             IconButton(
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+              icon: Icon(Icons.edit_outlined, color: onEdit == null ? AppColors.placeholder : AppColors.primary),
             ),
             IconButton(
               onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline, color: AppColors.primary),
+              icon: Icon(Icons.delete_outline, color: onDelete == null ? AppColors.placeholder : AppColors.primary),
             ),
           ],
         ),

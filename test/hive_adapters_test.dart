@@ -7,8 +7,11 @@ import 'package:recipes/models/comment.dart';
 import 'package:recipes/models/ingredient.dart';
 import 'package:recipes/models/measure_unit.dart';
 import 'package:recipes/models/recipe.dart';
+import 'package:recipes/models/recipe_image.dart';
 import 'package:recipes/models/recipe_ingredient.dart';
 import 'package:recipes/models/recipe_step.dart';
+
+import 'fixtures.dart';
 
 void main() {
   late Directory tempDir;
@@ -84,5 +87,21 @@ void main() {
     expect(restored.single.date, DateTime(2026, 8, 12));
     expect(restored.single.avatar, '');
     expect(restored.single.photo, '');
+  });
+
+  test('фото с объектами переживает запись и чтение с диска', () async {
+    final image = fixtureImage();
+    var box = await Hive.openBox<List>('images_test');
+    await box.put('1', [image]);
+    await box.close();
+
+    box = await Hive.openBox<List>('images_test');
+    final restored = box.get('1')!.cast<RecipeImage>().single;
+
+    expect(restored.bytes, image.bytes);
+    expect(restored.objects.length, 2);
+    expect(restored.objects.first.label, 'cup');
+    expect(restored.objects.first.score, 0.87);
+    expect(restored.objects.first.box.right, 0.5);
   });
 }

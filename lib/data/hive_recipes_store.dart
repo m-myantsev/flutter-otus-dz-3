@@ -5,6 +5,7 @@ import '../models/food_data.dart';
 import '../models/ingredient.dart';
 import '../models/measure_unit.dart';
 import '../models/recipe.dart';
+import '../models/recipe_image.dart';
 import 'hive/hive_registrar.g.dart';
 import 'recipes_store.dart';
 
@@ -16,6 +17,7 @@ class HiveRecipesStore implements RecipesStore {
     required this._measureUnits,
     required this._comments,
     required this._favorites,
+    required this._images,
   });
 
   final Box<Recipe> _recipes;
@@ -23,6 +25,11 @@ class HiveRecipesStore implements RecipesStore {
   final Box<MeasureUnit> _measureUnits;
   final Box<List> _comments;
   final Box<bool> _favorites;
+
+  /// Фото по рецептам
+  ///
+  /// Фото живут только на устройстве
+  final Box<List> _images;
 
   /// Инициализирует Hive, регистрирует адаптеры и открывает боксы приложения
   static Future<HiveRecipesStore> open() async {
@@ -36,6 +43,7 @@ class HiveRecipesStore implements RecipesStore {
       measureUnits: await Hive.openBox<MeasureUnit>('measure_units'),
       comments: await Hive.openBox<List>('comments'),
       favorites: await Hive.openBox<bool>('favorites'),
+      images: await Hive.openBox<List>('recipe_images'),
     );
   }
 
@@ -53,6 +61,11 @@ class HiveRecipesStore implements RecipesStore {
 
   @override
   Set<int> loadFavoriteIds() => _favorites.keys.map((key) => int.parse(key as String)).toSet();
+
+  @override
+  List<RecipeImage> loadImages(int recipeId) {
+    return (_images.get(recipeId.toString()) ?? const []).cast<RecipeImage>().toList();
+  }
 
   @override
   Future<void> saveAll(FoodData data) async {
@@ -75,6 +88,11 @@ class HiveRecipesStore implements RecipesStore {
   @override
   Future<void> saveFavorite(int recipeId, bool isFavorite) {
     return isFavorite ? _favorites.put(recipeId.toString(), true) : _favorites.delete(recipeId.toString());
+  }
+
+  @override
+  Future<void> saveImages(int recipeId, List<RecipeImage> images) {
+    return _images.put(recipeId.toString(), List<RecipeImage>.from(images));
   }
 
   /// Замещает серверные записи бокса свежими, не трогая созданные оффлайн с ключами, начинающимися с `-`

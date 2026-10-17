@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/image_picker_photo_picker.dart';
+import '../data/photo_picker.dart';
+import '../data/photo_source.dart';
 import '../data/recipes_manager.dart';
 import '../models/recipe.dart';
 import '../theme/app_colors.dart';
@@ -9,20 +12,25 @@ import '../widgets/comment_tile.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/landscape_half_width.dart';
 import '../widgets/photo_source_sheet.dart';
+import '../widgets/recipe_gallery.dart';
 import '../widgets/recipe_photo.dart';
 import '../widgets/recipe_step_card.dart';
+import 'recipe_images_page.dart';
 
 /// Страница просмотра рецепта, включающая состав, шаги приготовления и комментарии
 ///
 /// Отметки пройденных шагов локальны для страницы
 class RecipePage extends StatefulWidget {
-  const RecipePage({super.key, required this.manager, required this.recipe});
+  const RecipePage({super.key, required this.manager, required this.recipe, this.picker});
 
   /// Хранилище рецептов
   final RecipesManager manager;
 
   /// Отображаемый рецепт
   final Recipe recipe;
+
+  /// Источник новых фото рецепта, по умолчанию системный пикер
+  final PhotoPicker? picker;
 
   /// Маршрут на эту страницу
   static Route<void> route({required RecipesManager manager, required Recipe recipe}) {
@@ -40,6 +48,12 @@ class _RecipePageState extends State<RecipePage> {
   final Set<int> _checkedSteps = {};
 
   final _commentController = TextEditingController();
+
+  /// Источник новых фото, системный пикер создаётся лениво только при отсутствии `widget.picker`
+  late final PhotoPicker _picker = widget.picker ?? ImagePickerPhotoPicker();
+
+  /// Добавляемое фото уже получено от пикера и анализируется менеджером
+  bool _isAddingImage = false;
 
   /// Рамка поля нового комментария
   static const _commentBorder = OutlineInputBorder(
@@ -84,6 +98,58 @@ class _RecipePageState extends State<RecipePage> {
     // Комментарий появится в списке по уведомлению менеджера
     widget.manager.addComment(widget.recipe.id, text);
     _commentController.clear();
+  }
+
+  /// Запрашивает источник, получает фото от пикера и добавляет его к рецепту
+  Future<void> _addImage() async {
+    // Удалять с плитки добавления нечего, поэтому пункт удаления не показывается
+    final choice = await showPhotoSourceSheet(
+      context,
+      canTakePhoto: _picker.supports(PhotoSource.camera),
+      canDelete: false,
+    );
+
+    final source = switch (choice) {
+      PhotoSourceChoice.camera => PhotoSource.camera,
+      PhotoSourceChoice.album => PhotoSource.album,
+      PhotoSourceChoice.delete || null => null,
+    };
+
+    if (source == null || !mounted) {
+      return;
+    }
+
+    try {
+      final bytes = await _picker.pick(source);
+      // Индикатор включается только с готовыми байтами, иначе отмена выбора мигнула бы плиткой анализа
+      if (bytes == null || !mounted) {
+        return;
+      }
+
+      setState(() => _isAddingImage = true);
+      // Миниатюра появится в ленте по уведомлению менеджера
+      await widget.manager.addImage(widget.recipe.id, bytes);
+    } on Exception catch (error) {
+      debugPrint('Не удалось добавить фото. $error');
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось добавить фото')));
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingImage = false);
+      }
+    }
+  }
+
+  /// Открывает фото рецепта с позиции [index] на весь экран
+  void _openImage(int index) {
+    Navigator.push(
+      context,
+      RecipeImagesPage.route(manager: widget.manager, recipeId: widget.recipe.id, initialIndex: index),
+    );
   }
 
   @override
@@ -150,6 +216,14 @@ class _RecipePageState extends State<RecipePage> {
                     child: RecipePhoto(photo: recipe.photo),
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              // Лента сама держит боковые отступы, чтобы прокручиваемые миниатюры уходили под край экрана
+              RecipeGallery(
+                images: widget.manager.images(recipe.id),
+                isBusy: _isAddingImage,
+                onAdd: _addImage,
+                onOpen: _openImage,
               ),
               const SizedBox(height: 17),
               padded(
@@ -232,6 +306,8 @@ class _RecipePageState extends State<RecipePage> {
                           _commentIconButton(
                             icon: Icons.photo_size_select_actual,
                             tooltip: 'Прикрепить фото',
+                            // TODO: Реализовать вместе с прикреплением фото к комментарию
+                            // Результат намеренно игнорируется, пока прикреплять выбранное фото некуда
                             onPressed: () => showPhotoSourceSheet(context),
                           ),
                           if (value.text.trim().isNotEmpty)
@@ -318,7 +394,7 @@ class _RecipePageState extends State<RecipePage> {
 
   /// Комментарии к рецепту в порядке добавления
   Widget _buildComments() {
-    final comments = widget.manager.commentsOf(widget.recipe.id);
+    final comments = widget.manager.comments(widget.recipe.id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 32,

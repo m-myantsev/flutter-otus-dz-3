@@ -3,6 +3,7 @@ import '../models/food_data.dart';
 import '../models/ingredient.dart';
 import '../models/measure_unit.dart';
 import '../models/recipe.dart';
+import '../models/recipe_image.dart';
 
 /// Локальное хранилище данных о рецептах
 ///
@@ -24,6 +25,9 @@ abstract interface class RecipesStore {
   /// Идентификаторы избранных рецептов
   Set<int> loadFavoriteIds();
 
+  /// Фото рецепта в порядке добавления
+  List<RecipeImage> loadImages(int recipeId);
+
   /// Замещает серверные данные свежими
   Future<void> saveAll(FoodData data);
 
@@ -38,4 +42,7 @@ abstract interface class RecipesStore {
 
   /// Сохраняет или снимает отметку избранного
   Future<void> saveFavorite(int recipeId, bool isFavorite);
+
+  /// Сохраняет фото рецепта
+  Future<void> saveImages(int recipeId, List<RecipeImage> images);
 }

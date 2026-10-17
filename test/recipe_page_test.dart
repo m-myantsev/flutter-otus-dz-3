@@ -1,25 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recipes/data/photo_source.dart';
 import 'package:recipes/data/recipes_manager.dart';
 import 'package:recipes/models/recipe.dart';
+import 'package:recipes/screens/recipe_images_page.dart';
 import 'package:recipes/screens/recipe_page.dart';
+import 'package:recipes/theme/app_colors.dart';
 import 'package:recipes/widgets/favorite_button.dart';
+import 'package:recipes/widgets/recipe_gallery.dart';
+import 'package:recipes/widgets/recipe_photo.dart';
 import 'package:recipes/widgets/recipe_step_card.dart';
+import 'package:rive/rive.dart' as rive;
 
+import 'fakes.dart';
+import 'fixtures.dart';
 import 'helpers.dart';
 
 void main() {
+  setUpAll(() async => expect(await rive.RiveNative.init(), isTrue));
+
   group('RecipePage', () {
     /// Открывает страницу рецепта и возвращает менеджер, на котором она построена
     ///
-    /// Без [recipe] берётся первый рецепт
-    Future<RecipesManager> pumpPage(WidgetTester tester, {Recipe? recipe}) async {
-      final manager = await createTestManager();
+    /// Без [recipe] берётся первый рецепт, без [store] хранилище с тестовыми комментариями, без [detector] нет разметки
+    Future<RecipesManager> pumpPage(
+      WidgetTester tester, {
+      Recipe? recipe,
+      FakePhotoPicker? picker,
+      InMemoryRecipesStore? store,
+      FakeObjectDetector? detector,
+    }) async {
+      final manager = await createTestManager(store: store, detector: detector);
       await tester.pumpWidget(
         MaterialApp(
-          home: RecipePage(manager: manager, recipe: recipe ?? manager.recipes.first),
+          home: RecipePage(manager: manager, recipe: recipe ?? manager.recipes.first, picker: picker),
         ),
       );
       await tester.pump();
@@ -312,6 +330,111 @@ void main() {
       expect(find.text('нет ингредиентов'), findsOneWidget);
       await scrollTo(tester, find.text('нет шагов приготовления'));
       expect(find.text('нет шагов приготовления'), findsOneWidget);
+    });
+
+    group('галерея', () {
+      /// Миниатюры фото рецепта, других `Image` внутри ленты нет
+      final thumbnails = find.descendant(of: find.byType(RecipeGallery), matching: find.byType(Image));
+
+      testWidgets('галерея стоит между фото рецепта и ингредиентами', (tester) async {
+        await pumpPage(tester);
+        final photo = tester.getRect(find.byType(RecipePhoto));
+        final gallery = tester.getRect(find.byType(RecipeGallery));
+        final title = tester.getRect(find.text('Ингредиенты'));
+        expect(gallery.top - photo.bottom, 12);
+        expect(title.top - gallery.bottom, 17);
+      });
+
+      testWidgets('выбор из альбома добавляет фото в менеджер и в ленту', (tester) async {
+        final picker = FakePhotoPicker(bytes: fixtureJpeg());
+        final manager = await pumpPage(tester, picker: picker);
+
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Выбрать из альбома'));
+        await tester.pumpAndSettle();
+
+        expect(picker.lastSource, PhotoSource.album);
+        expect(manager.images(0), hasLength(1));
+        expect(thumbnails, findsOneWidget);
+      });
+
+      testWidgets('пока фото анализируется, в ленте плитка анализа, а второе добавление недоступно', (tester) async {
+        final picker = FakePhotoPicker(bytes: fixtureJpeg());
+        final detector = FakeObjectDetector()..gate = Completer();
+        final busyTile = find.descendant(
+          of: find.byType(RecipeGallery),
+          matching: find.byType(CircularProgressIndicator),
+        );
+        await pumpPage(tester, picker: picker, detector: detector);
+
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Выбрать из альбома'));
+
+        // Индикатор крутится бесконечно, поэтому `pumpAndSettle` до ответа детектора не дождался бы покоя
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(detector.calls, 1);
+        expect(busyTile, findsOneWidget);
+        expect(thumbnails, findsNothing);
+
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(find.text('Выбрать из альбома'), findsNothing, reason: 'панель выбора не открылась');
+        expect(picker.calls, 1);
+
+        // Пустой ответ не уводит разметку в `compute`, чей изолят под тестовым временем не завершился бы
+        detector.gate!.complete(const []);
+        await tester.pumpAndSettle();
+
+        expect(busyTile, findsNothing);
+        expect(thumbnails, findsOneWidget);
+      });
+
+      testWidgets('без камеры пункт съёмки неактивен', (tester) async {
+        await pumpPage(tester, picker: FakePhotoPicker(supportsCamera: false));
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Text>(find.text('Сфотографировать')).style?.color, AppColors.placeholder);
+      });
+
+      testWidgets('отмена выбора ничего не добавляет', (tester) async {
+        final manager = await pumpPage(tester, picker: FakePhotoPicker());
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Выбрать из альбома'));
+        await tester.pumpAndSettle();
+        expect(manager.images(0), isEmpty);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+      });
+
+      testWidgets('сбой пикера показывает SnackBar', (tester) async {
+        await pumpPage(tester, picker: FakePhotoPicker(fails: true));
+        await tester.tap(find.byTooltip('Добавить фото'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Выбрать из альбома'));
+        await tester.pumpAndSettle();
+        expect(find.text('Не удалось добавить фото'), findsOneWidget);
+      });
+
+      testWidgets('тап по миниатюре открывает полноэкранный просмотр', (tester) async {
+        await pumpPage(
+          tester,
+          store: InMemoryRecipesStore(
+            comments: fixtureComments(),
+            images: {
+              0: [fixtureImage()],
+            },
+          ),
+        );
+        await tester.tap(thumbnails);
+        await tester.pumpAndSettle();
+        expect(find.byType(RecipeImagesPage), findsOneWidget);
+        expect(find.text('1 из 1'), findsOneWidget);
+      });
     });
   });
 }

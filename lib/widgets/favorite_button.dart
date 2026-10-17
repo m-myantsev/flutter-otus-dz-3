@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:rive/rive.dart' as rive;
 
 import '../theme/app_colors.dart';
 
 /// Кнопка избранного
-class FavoriteButton extends StatelessWidget {
+///
+/// Сердце анимирует Rive-файл, и до его загрузки рисует [HeartPainter]
+class FavoriteButton extends StatefulWidget {
   const FavoriteButton({super.key, required this.isFavorite, required this.onPressed});
 
   /// Видимый размер сердца
@@ -19,23 +24,153 @@ class FavoriteButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  State<FavoriteButton> createState() => FavoriteButtonState();
+}
+
+/// Неизменные параметры Rive-файла с сердцем
+abstract final class _HeartRive {
+  /// Ассет с анимацией
+  static const asset = 'assets/rive/heart.riv';
+
+  /// Артборд с сердцем
+  static const artboard = 'like';
+
+  /// State machine, переключающая сердце
+  static const stateMachine = 'stateMachine';
+
+  /// Булево свойство view model с состоянием избранного
+  static const checkedProperty = 'checked';
+
+  /// Время, на которое машина проматывается сразу после загрузки
+  static const settleSeconds = 10.0;
+
+  /// Сколько вызовов `advanceAndApply` нужно до покоя
+  ///
+  /// Каждый делает не больше одного перехода
+  static const settleCalls = 3;
+}
+
+/// Состояние [FavoriteButton], загружающее Rive-файл и передающее ему состояние избранного
+class FavoriteButtonState extends State<FavoriteButton> {
+  rive.File? _file;
+  rive.RiveWidgetController? _controller;
+  rive.ViewModelInstance? _viewModel;
+  rive.ViewModelInstanceBoolean? _checked;
+  bool _loadStarted = false;
+
+  /// Переключатель сердца в Rive-файле
+  ///
+  /// `null` пока файл не загружен
+  @visibleForTesting
+  rive.ViewModelInstanceBoolean? get checked => _checked;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_loadStarted) {
+      _loadStarted = true;
+      unawaited(_load(DefaultAssetBundle.of(context)));
+    }
+  }
+
+  Future<void> _load(AssetBundle bundle) async {
+    // `false` приходит только на веб, когда не загрузился WASM, и тогда остаётся `HeartPainter`
+    if (!await rive.RiveNative.init()) return;
+
+    final file = await rive.File.asset(_HeartRive.asset, riveFactory: rive.Factory.flutter, bundle: bundle);
+    if (file == null) {
+      throw StateError('Файл ${_HeartRive.asset} не загрузился');
+    }
+
+    if (!mounted) {
+      file.dispose();
+      return;
+    }
+
+    final controller = rive.RiveWidgetController(
+      file,
+      artboardSelector: rive.ArtboardSelector.byName(_HeartRive.artboard),
+      stateMachineSelector: rive.StateMachineSelector.byName(_HeartRive.stateMachine),
+    );
+    final rive.ViewModelInstance viewModel;
+    try {
+      viewModel = controller.dataBind(rive.DataBind.auto());
+    } on rive.RiveDataBindException {
+      controller.dispose();
+      file.dispose();
+      rethrow;
+    }
+
+    final checked = viewModel.boolean(_HeartRive.checkedProperty);
+    if (checked == null) {
+      viewModel.dispose();
+      controller.dispose();
+      file.dispose();
+      throw StateError('В view model файла ${_HeartRive.asset} нет булева свойства ${_HeartRive.checkedProperty}');
+    }
+
+    checked.value = widget.isFavorite;
+
+    // Проматываем машину до состояния покоя, иначе при открытии страницы проиграется `check` или `back`
+    for (var i = 0; i < _HeartRive.settleCalls; i++) {
+      controller.stateMachine.advanceAndApply(_HeartRive.settleSeconds);
+    }
+
+    setState(() {
+      _file = file;
+      _controller = controller;
+      _viewModel = viewModel;
+      _checked = checked;
+    });
+  }
+
+  @override
+  void didUpdateWidget(FavoriteButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isFavorite != widget.isFavorite) {
+      _checked?.value = widget.isFavorite;
+    }
+  }
+
+  @override
+  void dispose() {
+    _checked?.dispose();
+    _viewModel?.dispose();
+    _controller?.dispose();
+    _file?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+
     return Semantics(
       container: true,
       button: true,
       enabled: true,
-      selected: isFavorite,
-      label: isFavorite ? 'В избранном' : 'Добавить в избранное',
+      selected: widget.isFavorite,
+      label: widget.isFavorite ? 'В избранном' : 'Добавить в избранное',
       child: GestureDetector(
-        onTap: onPressed,
+        onTap: widget.onPressed,
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          width: tapSize,
-          height: tapSize,
+          width: FavoriteButton.tapSize,
+          height: FavoriteButton.tapSize,
           child: Center(
-            child: CustomPaint(
-              size: const Size.square(heartSize),
-              painter: HeartPainter(color: isFavorite ? AppColors.likeActive : AppColors.likeInactive),
+            child: SizedBox.square(
+              dimension: FavoriteButton.heartSize,
+              child: controller == null
+                  ? CustomPaint(
+                      painter: HeartPainter(color: widget.isFavorite ? AppColors.likeActive : AppColors.likeInactive),
+                    )
+                  // Хит-тест выключен, потому что тап обрабатывает внешний `GestureDetector`
+                  : rive.RiveWidget(
+                      controller: controller,
+                      fit: rive.Fit.contain,
+                      hitTestBehavior: rive.RiveHitTestBehavior.none,
+                    ),
             ),
           ),
         ),

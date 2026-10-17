@@ -1,12 +1,21 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:recipes/api/food_api.dart';
+import 'package:recipes/data/photo_picker.dart';
+import 'package:recipes/data/photo_source.dart';
 import 'package:recipes/data/recipes_store.dart';
 import 'package:recipes/models/comment.dart';
+import 'package:recipes/models/detected_object.dart';
 import 'package:recipes/models/food_data.dart';
 import 'package:recipes/models/ingredient.dart';
 import 'package:recipes/models/measure_unit.dart';
 import 'package:recipes/models/recipe.dart';
+import 'package:recipes/models/recipe_image.dart';
 import 'package:recipes/models/recipe_ingredient.dart';
 import 'package:recipes/models/recipe_step.dart';
+import 'package:recipes/vision/object_detection_exception.dart';
+import 'package:recipes/vision/object_detector.dart';
 
 /// Сетевой API для тестов
 ///
@@ -26,6 +35,9 @@ class FakeFoodApi implements FoodApi {
 
   /// Сколько раз запрашивали создание рецепта
   int createRecipeCalls = 0;
+
+  /// Сколько раз запрашивали создание ингредиента
+  int createIngredientCalls = 0;
 
   /// Искусственная задержка ответа для тестов, проверяющих поведение во время ожидания
   Duration delay = Duration.zero;
@@ -62,6 +74,8 @@ class FakeFoodApi implements FoodApi {
 
   @override
   Future<Ingredient> createIngredient(String name, MeasureUnit measureUnit) async {
+    createIngredientCalls++;
+
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
@@ -85,20 +99,26 @@ class InMemoryRecipesStore implements RecipesStore {
     List<MeasureUnit> measureUnits = const [],
     Map<int, List<Comment>> comments = const {},
     Set<int> favoriteIds = const {},
+    Map<int, List<RecipeImage>> images = const {},
     this.failOnSaveAll = false,
+    this.failOnSaveImages = false,
   }) : _recipes = {for (final recipe in recipes) recipe.id: recipe},
        _ingredients = {for (final item in ingredients) item.id: item},
        _measureUnits = {for (final unit in measureUnits) unit.id: unit},
        _comments = {
          for (final entry in comments.entries) entry.key: [...entry.value],
        },
-       _favoriteIds = {...favoriteIds};
+       _favoriteIds = {...favoriteIds},
+       _images = {
+         for (final entry in images.entries) entry.key: [...entry.value],
+       };
 
   final Map<int, Recipe> _recipes;
   final Map<int, Ingredient> _ingredients;
   final Map<int, MeasureUnit> _measureUnits;
   final Map<int, List<Comment>> _comments;
   final Set<int> _favoriteIds;
+  final Map<int, List<RecipeImage>> _images;
 
   @override
   List<Recipe> loadRecipes() => _recipes.values.toList();
@@ -114,6 +134,9 @@ class InMemoryRecipesStore implements RecipesStore {
 
   @override
   Set<int> loadFavoriteIds() => {..._favoriteIds};
+
+  @override
+  List<RecipeImage> loadImages(int recipeId) => [...?_images[recipeId]];
 
   /// Имитация отказа записи на диск
   final bool failOnSaveAll;
@@ -132,8 +155,18 @@ class InMemoryRecipesStore implements RecipesStore {
     _measureUnits.addAll({for (final unit in data.measureUnits) unit.id: unit});
   }
 
+  /// Пока задан, [putRecipe] ждёт его завершения, чтобы тест проверил интерфейс во время сохранения
+  Completer<void>? putRecipeGate;
+
   @override
-  Future<void> putRecipe(Recipe recipe) async => _recipes[recipe.id] = recipe;
+  Future<void> putRecipe(Recipe recipe) async {
+    final gate = putRecipeGate;
+    if (gate != null) {
+      await gate.future;
+    }
+
+    _recipes[recipe.id] = recipe;
+  }
 
   @override
   Future<void> putIngredient(Ingredient ingredient) async => _ingredients[ingredient.id] = ingredient;
@@ -148,5 +181,106 @@ class InMemoryRecipesStore implements RecipesStore {
     } else {
       _favoriteIds.remove(recipeId);
     }
+  }
+
+  /// Имитация отказа записи фото на диск
+  ///
+  /// Бросает `Exception`, а не `StateError` как [failOnSaveAll], потому что интерфейс ловит только `Exception`
+  final bool failOnSaveImages;
+
+  /// Пока задан, [saveImages] ждёт его завершения, как медленная запись на диск
+  Completer<void>? saveImagesGate;
+
+  /// Сколько раз начиналась запись фото
+  int saveImagesCalls = 0;
+
+  @override
+  Future<void> saveImages(int recipeId, List<RecipeImage> images) async {
+    saveImagesCalls++;
+    final gate = saveImagesGate;
+    if (gate != null) {
+      await gate.future;
+    }
+
+    if (failOnSaveImages) {
+      throw Exception('запись фото не удалась');
+    }
+
+    _images[recipeId] = [...images];
+  }
+}
+
+/// Детектор объектов для тестов
+///
+/// При [fails] бросает [ObjectDetectionException], как детектор без загруженной модели
+class FakeObjectDetector implements ObjectDetector {
+  FakeObjectDetector({this.objects = const [], this.fails = false});
+
+  /// Объекты, отдаваемые [detect]
+  final List<DetectedObject> objects;
+
+  /// Имитация сбоя детекции
+  final bool fails;
+
+  /// Сколько раз запрашивали детекцию
+  int calls = 0;
+
+  /// Пока задан, [detect] ждёт его завершения, чтобы тест проверил интерфейс во время анализа
+  Completer<List<DetectedObject>>? gate;
+
+  @override
+  Future<List<DetectedObject>> detect(Uint8List jpeg) async {
+    calls++;
+
+    final gate = this.gate;
+    if (gate != null) {
+      return gate.future;
+    }
+
+    if (fails) {
+      throw const ObjectDetectionException('тестовый сбой');
+    }
+
+    return objects;
+  }
+}
+
+/// Пикер фото для тестов
+///
+/// Отдаёт заранее заданные [bytes], `null` в них имитирует отмену выбора
+class FakePhotoPicker implements PhotoPicker {
+  FakePhotoPicker({this.bytes, this.supportsCamera = true, this.fails = false});
+
+  /// Байты, отдаваемые [pick]
+  final Uint8List? bytes;
+
+  /// Есть ли у устройства камера
+  final bool supportsCamera;
+
+  /// Имитация сбоя пикера
+  final bool fails;
+
+  /// Источник последнего запроса фото
+  PhotoSource? lastSource;
+
+  /// Сколько раз запрашивали фото
+  int calls = 0;
+
+  @override
+  bool supports(PhotoSource source) => switch (source) {
+    PhotoSource.camera => supportsCamera,
+    PhotoSource.album => true,
+  };
+
+  @override
+  Future<Uint8List?> pick(PhotoSource source) async {
+    calls++;
+
+    lastSource = source;
+    if (fails) {
+      throw Exception('пикер недоступен');
+    }
+
+    return bytes;
   }
 }

@@ -8,9 +8,12 @@ import 'package:recipes/data/hive/hive_adapters.dart';
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(CommentAdapter());
+    registerAdapter(DetectedObjectAdapter());
+    registerAdapter(DetectionBoxAdapter());
     registerAdapter(IngredientAdapter());
     registerAdapter(MeasureUnitAdapter());
     registerAdapter(RecipeAdapter());
+    registerAdapter(RecipeImageAdapter());
     registerAdapter(RecipeIngredientAdapter());
     registerAdapter(RecipeStepAdapter());
   }
@@ -19,9 +22,12 @@ extension HiveRegistrar on HiveInterface {
 extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(CommentAdapter());
+    registerAdapter(DetectedObjectAdapter());
+    registerAdapter(DetectionBoxAdapter());
     registerAdapter(IngredientAdapter());
     registerAdapter(MeasureUnitAdapter());
     registerAdapter(RecipeAdapter());
+    registerAdapter(RecipeImageAdapter());
     registerAdapter(RecipeIngredientAdapter());
     registerAdapter(RecipeStepAdapter());
   }
