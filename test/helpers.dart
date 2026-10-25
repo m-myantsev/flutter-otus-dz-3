@@ -1,5 +1,5 @@
-import 'package:recipes/data/recipes_manager.dart';
-import 'package:recipes/vision/object_detector.dart';
+import 'package:recipes/domain/repositories/object_detector.dart';
+import 'package:recipes/presentation/state/recipes_manager.dart';
 
 import 'fakes.dart';
 import 'fixtures.dart';

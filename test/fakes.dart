@@ -1,21 +1,21 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:recipes/api/food_api.dart';
-import 'package:recipes/data/photo_picker.dart';
-import 'package:recipes/data/photo_source.dart';
-import 'package:recipes/data/recipes_store.dart';
-import 'package:recipes/models/comment.dart';
-import 'package:recipes/models/detected_object.dart';
-import 'package:recipes/models/food_data.dart';
-import 'package:recipes/models/ingredient.dart';
-import 'package:recipes/models/measure_unit.dart';
-import 'package:recipes/models/recipe.dart';
-import 'package:recipes/models/recipe_image.dart';
-import 'package:recipes/models/recipe_ingredient.dart';
-import 'package:recipes/models/recipe_step.dart';
-import 'package:recipes/vision/object_detection_exception.dart';
-import 'package:recipes/vision/object_detector.dart';
+import 'package:recipes/domain/entities/comment.dart';
+import 'package:recipes/domain/entities/detected_object.dart';
+import 'package:recipes/domain/entities/food_data.dart';
+import 'package:recipes/domain/entities/ingredient.dart';
+import 'package:recipes/domain/entities/measure_unit.dart';
+import 'package:recipes/domain/entities/recipe.dart';
+import 'package:recipes/domain/entities/recipe_image.dart';
+import 'package:recipes/domain/entities/recipe_ingredient.dart';
+import 'package:recipes/domain/entities/recipe_step.dart';
+import 'package:recipes/domain/exceptions/object_detection_exception.dart';
+import 'package:recipes/domain/repositories/food_api.dart';
+import 'package:recipes/domain/repositories/object_detector.dart';
+import 'package:recipes/domain/repositories/photo_picker.dart';
+import 'package:recipes/domain/repositories/photo_source.dart';
+import 'package:recipes/domain/repositories/recipes_store.dart';
 
 /// Сетевой API для тестов
 ///
