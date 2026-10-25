@@ -16,8 +16,8 @@ void main() {
     final catalogBefore = manager.ingredients.length;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      localizedApp(
+        Scaffold(
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () => showIngredientDialog(context, manager: manager),
@@ -63,8 +63,8 @@ void main() {
     RecipeIngredient? result;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      localizedApp(
+        Scaffold(
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () async => result = await showIngredientDialog(context, manager: manager),
@@ -100,5 +100,87 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(result?.ingredient.name, 'Соль морская');
     expect(result?.ingredient.measureUnit, same(unit));
+  });
+
+  testWidgets('на английском заголовок, поля и кнопка диалога ингредиента переведены', (tester) async {
+    final manager = await createTestManager();
+
+    await tester.pumpWidget(
+      localizedApp(
+        Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showIngredientDialog(context, manager: manager),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ingredient'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Ingredient name'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Add'), findsOneWidget);
+  });
+
+  group('дробное количество при редактировании', () {
+    const cases = {'ru': '1,5', 'en': '1.5'};
+    for (final MapEntry(key: languageCode, value: expected) in cases.entries) {
+      testWidgets('на языке $languageCode показано как $expected', (tester) async {
+        final manager = await createTestManager();
+        await tester.pumpWidget(
+          localizedApp(
+            Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => showIngredientDialog(
+                    context,
+                    manager: manager,
+                    initial: const RecipeIngredient(count: 1.5, ingredient: honey),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+            locale: Locale(languageCode),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextFormField, expected), findsOneWidget);
+      });
+    }
+  });
+
+  testWidgets('ошибки под полями количества и единицы переносятся на вторую строку', (tester) async {
+    final manager = await createTestManager();
+    await tester.pumpWidget(
+      localizedApp(
+        Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showIngredientDialog(context, manager: manager),
+              child: const Text('открыть'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('открыть'));
+    await tester.pumpAndSettle();
+
+    final count = find.descendant(
+      of: find.widgetWithText(TextFormField, 'Количество'),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(count).decoration?.errorMaxLines, 2);
+
+    final unit = find.byType(DropdownButtonFormField<MeasureUnit>);
+    final unitDecorator = find.descendant(of: unit, matching: find.byType(InputDecorator));
+    expect(tester.widget<InputDecorator>(unitDecorator).decoration.errorMaxLines, 2);
   });
 }

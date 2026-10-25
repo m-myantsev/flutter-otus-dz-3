@@ -13,5 +13,5 @@ class RecipeImagesSaveException implements Exception {
   final Exception cause;
 
   @override
-  String toString() => 'RecipeImagesSaveException: фото рецепта ${recipe.id} не сохранены. $cause';
+  String toString() => 'RecipeImagesSaveException: photos of recipe ${recipe.id} were not saved. $cause';
 }

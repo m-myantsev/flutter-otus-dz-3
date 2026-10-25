@@ -5,6 +5,7 @@ import 'package:recipes/presentation/theme/app_colors.dart';
 import 'package:recipes/presentation/widgets/recipe_gallery.dart';
 
 import '../../fixtures.dart';
+import '../../helpers.dart';
 
 void main() {
   group('RecipeGallery', () {
@@ -16,8 +17,8 @@ void main() {
       VoidCallback? onAdd,
       ValueChanged<int>? onOpen,
     }) => tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      localizedApp(
+        Scaffold(
           body: RecipeGallery(images: images, isBusy: isBusy, onAdd: onAdd ?? () {}, onOpen: onOpen ?? (_) {}),
         ),
       ),
@@ -49,8 +50,8 @@ void main() {
     testWidgets('без onAdd плитка добавления неактивна и без индикатора анализа', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        localizedApp(
+          Scaffold(
             body: RecipeGallery(images: const [], onAdd: null, onOpen: (_) {}),
           ),
         ),
@@ -103,6 +104,33 @@ void main() {
 
       await tester.tap(find.byType(Image).last);
       expect(opened, 1);
+      handle.dispose();
+    });
+
+    testWidgets('на английском подписи для скринридера переведены', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        localizedApp(
+          Scaffold(
+            body: RecipeGallery(
+              images: [
+                fixtureImage(),
+                RecipeImage(bytes: fixtureJpeg()),
+              ],
+              isBusy: true,
+              onAdd: () {},
+              onOpen: (_) {},
+            ),
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      expect(find.byTooltip('Add photo'), findsOneWidget);
+      expect(find.bySemanticsLabel('Add photo'), findsOneWidget);
+      expect(find.bySemanticsLabel('Analyzing photo'), findsOneWidget);
+      expect(find.bySemanticsLabel('Photo 1: cup 87%, bowl 65%'), findsOneWidget);
+      expect(find.bySemanticsLabel('Photo 2: no objects found'), findsOneWidget);
       handle.dispose();
     });
   });

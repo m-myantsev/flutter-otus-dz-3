@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/comment.dart';
 import '../formatting/date_format.dart';
 import '../theme/app_colors.dart';
@@ -45,12 +46,15 @@ class CommentTile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      comment.author,
+                      comment.isOwn ? context.l10n.commentAuthorYou : comment.author,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 16, color: AppColors.accent),
                     ),
                   ),
-                  Text(formatDate(comment.date), style: const TextStyle(fontSize: 14, color: AppColors.placeholder)),
+                  Text(
+                    formatDate(comment.date, Localizations.localeOf(context).toLanguageTag()),
+                    style: const TextStyle(fontSize: 14, color: AppColors.placeholder),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),

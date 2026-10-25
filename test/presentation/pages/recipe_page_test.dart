@@ -27,17 +27,21 @@ void main() {
     /// Открывает страницу рецепта и возвращает менеджер, на котором она построена
     ///
     /// Без [recipe] берётся первый рецепт, без [store] хранилище с тестовыми комментариями, без [detector] нет разметки
+    ///
+    /// Без [picker] подставляется пикер, отдающий отмену выбора, без [locale] страница строится на русском
     Future<RecipesManager> pumpPage(
       WidgetTester tester, {
       Recipe? recipe,
       FakePhotoPicker? picker,
       InMemoryRecipesStore? store,
       FakeObjectDetector? detector,
+      Locale locale = const Locale('ru'),
     }) async {
       final manager = await createTestManager(store: store, detector: detector);
       await tester.pumpWidget(
-        MaterialApp(
-          home: RecipePage(manager: manager, recipe: recipe ?? manager.recipes.first, picker: picker),
+        localizedApp(
+          RecipePage(manager: manager, recipe: recipe ?? manager.recipes.first, picker: picker ?? FakePhotoPicker()),
+          locale: locale,
         ),
       );
       await tester.pump();
@@ -332,6 +336,44 @@ void main() {
       expect(find.text('нет шагов приготовления'), findsOneWidget);
     });
 
+    testWidgets('на английском заголовки, кнопки и поле комментария переведены', (tester) async {
+      await pumpPage(tester, locale: const Locale('en'));
+
+      expect(find.text('Recipe'), findsOneWidget);
+      expect(find.byTooltip('Share'), findsOneWidget);
+      expect(find.text('Ingredients'), findsOneWidget);
+
+      // Кнопки и секция шагов ниже первого экрана, ленивый список строит их только после прокрутки
+      await scrollTo(tester, find.text('Check availability'));
+      expect(find.text('Check availability'), findsOneWidget);
+
+      await scrollTo(tester, find.text('Cooking steps'));
+      expect(find.text('Cooking steps'), findsOneWidget);
+
+      await scrollTo(tester, find.text('Start cooking'));
+      expect(find.text('Start cooking'), findsOneWidget);
+
+      final field = find.byType(TextField);
+      await scrollTo(tester, field);
+      await tester.pumpAndSettle();
+      expect(find.text('leave a comment'), findsOneWidget);
+      expect(find.byTooltip('Attach photo'), findsOneWidget);
+
+      await tester.enterText(field, 'Cooked it twice');
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Send'), findsOneWidget);
+    });
+
+    testWidgets('на английском рецепт без состава и шагов показывает переведённые заглушки', (tester) async {
+      final manager = await createTestManager();
+      final recipe = manager.recipes.firstWhere((r) => r.ingredients.isEmpty && r.steps.isEmpty);
+      await pumpPage(tester, recipe: recipe, locale: const Locale('en'));
+
+      expect(find.text('no ingredients'), findsOneWidget);
+      await scrollTo(tester, find.text('no cooking steps'));
+      expect(find.text('no cooking steps'), findsOneWidget);
+    });
+
     group('галерея', () {
       /// Миниатюры фото рецепта, других `Image` внутри ленты нет
       final thumbnails = find.descendant(of: find.byType(RecipeGallery), matching: find.byType(Image));
@@ -418,6 +460,15 @@ void main() {
         await tester.tap(find.text('Выбрать из альбома'));
         await tester.pumpAndSettle();
         expect(find.text('Не удалось добавить фото'), findsOneWidget);
+      });
+
+      testWidgets('на английском сбой пикера показывает переведённый SnackBar', (tester) async {
+        await pumpPage(tester, picker: FakePhotoPicker(fails: true), locale: const Locale('en'));
+        await tester.tap(find.byTooltip('Add photo'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Choose from album'));
+        await tester.pumpAndSettle();
+        expect(find.text("Couldn't add photo"), findsOneWidget);
       });
 
       testWidgets('тап по миниатюре открывает полноэкранный просмотр', (tester) async {

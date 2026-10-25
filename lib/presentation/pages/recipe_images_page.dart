@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_image.dart';
+import '../formatting/photo_summary.dart';
 import '../state/recipes_manager.dart';
 import '../theme/app_colors.dart';
 
@@ -93,8 +95,9 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
       return;
     }
 
-    // Захвачен до ожидания записи, он принадлежит `MaterialApp` и покажет ошибку даже после ухода страницы
+    // Захвачены до ожидания записи, потому что после ухода страницы её контекст уже не годится
     final messenger = ScaffoldMessenger.of(context);
+    final failureMessage = context.l10n.imagesPageDeleteFailed;
     final images = widget.images();
     if (images.isEmpty) {
       return;
@@ -107,14 +110,14 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
       // Без отписки уведомление об удалении перестроило бы страницу в пустую, и анимация ухода показала бы пустое место
       widget.listenable.removeListener(_handleImagesChange);
       Navigator.pop(context);
-      await _tryRemove(index, messenger);
+      await _tryRemove(index, messenger, failureMessage);
       return;
     }
 
     setState(() => _isDeleting = true);
 
     try {
-      final isRemoved = await _tryRemove(index, messenger);
+      final isRemoved = await _tryRemove(index, messenger, failureMessage);
       if (isRemoved && mounted) {
         // После удаления последнего в списке фото индекс указывал бы за конец
         setState(() => _index = min(_index, widget.images().length - 1));
@@ -133,13 +136,13 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
     final isConfirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить фото?'),
+        title: Text(context.l10n.imagesPageDeleteTitle),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.imagesPageDeleteCancel)),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Удалить'),
+            child: Text(context.l10n.imagesPageDeleteConfirm),
           ),
         ],
       ),
@@ -150,14 +153,14 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
 
   /// Удаляет фото по позиции [index] и возвращает, удалось ли
   ///
-  /// Об отказе записи сообщает через [messenger]
-  Future<bool> _tryRemove(int index, ScaffoldMessengerState messenger) async {
+  /// Об отказе записи сообщает через [messenger] текстом [failureMessage]
+  Future<bool> _tryRemove(int index, ScaffoldMessengerState messenger, String failureMessage) async {
     try {
       await widget.remove(index);
       return true;
     } on Exception catch (error) {
-      debugPrint('Не удалось удалить фото. $error');
-      messenger.showSnackBar(const SnackBar(content: Text('Не удалось удалить фото')));
+      debugPrint('Deleting photo failed. $error');
+      messenger.showSnackBar(SnackBar(content: Text(failureMessage)));
       return false;
     }
   }
@@ -181,10 +184,13 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         // Цвет задан на тексте, потому что `titleTextStyle` темы явно красит заголовок и перекрывает `foregroundColor`
-        title: Text('${index + 1} из ${images.length}', style: const TextStyle(color: Colors.white)),
+        title: Text(
+          context.l10n.imagesPageCounter(index + 1, images.length),
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Удалить фото',
+            tooltip: context.l10n.imagesPageDelete,
             icon: const Icon(Icons.delete_outline),
             onPressed: _isDeleting ? null : _delete,
           ),
@@ -202,7 +208,7 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
                 // Ключ по фото сбрасывает зум, когда после удаления на эту позицию встаёт соседнее фото
                 key: ObjectKey(image),
                 image: true,
-                label: image.summary,
+                label: photoSummary(context.l10n, image),
                 child: InteractiveViewer(
                   // Без нижнего предела фото можно было бы сжать меньше экрана, и вокруг осталась бы пустая рамка
                   minScale: _ViewerStyle.minScale,
@@ -226,7 +232,7 @@ class _RecipeImagesPageState extends State<RecipeImagesPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: objects.isEmpty
-                        ? const [_CaptionChip('Объекты не найдены')]
+                        ? [_CaptionChip(context.l10n.imagesPageNoObjects)]
                         : [for (final object in objects) _CaptionChip(object.caption)],
                   ),
                 ),

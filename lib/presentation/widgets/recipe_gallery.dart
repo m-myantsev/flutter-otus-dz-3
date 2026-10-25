@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_image.dart';
+import '../formatting/photo_summary.dart';
 import '../theme/app_colors.dart';
 
 /// Горизонтальная лента фото рецепта
@@ -98,15 +100,16 @@ class _AddTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = context.l10n.galleryAddPhoto;
     // Подсказка не дублирует метку в дереве семантики, иначе скринридер прочтёт название дважды
     return Tooltip(
-      message: 'Добавить фото',
+      message: label,
       excludeFromSemantics: true,
       child: Semantics(
         container: true,
         button: true,
         enabled: !isBusy && onAdd != null,
-        label: 'Добавить фото',
+        label: label,
         child: InkWell(
           // Пока предыдущее фото анализируется, второе добавление запустило бы гонку двух детекций
           onTap: isBusy ? null : onAdd,
@@ -140,9 +143,9 @@ class _BusyTile extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      child: const SizedBox.square(
+      child: SizedBox.square(
         dimension: _GalleryMetrics.tileSize,
-        child: Center(child: CircularProgressIndicator(semanticsLabel: 'Анализ фото')),
+        child: Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.galleryAnalyzing)),
       ),
     );
   }
@@ -166,7 +169,7 @@ class _ImageTile extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
-      label: 'Фото ${index + 1}: ${image.summary}',
+      label: context.l10n.galleryPhotoLabel(index + 1, photoSummary(context.l10n, image)),
       child: InkWell(
         onTap: () => onOpen(index),
         borderRadius: _GalleryMetrics.borderRadius,

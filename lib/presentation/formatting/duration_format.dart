@@ -1,22 +1,22 @@
-import '../../core/utils/plural.dart';
+import '../../core/l10n/app_localizations.dart';
 
-/// Форматирует длительность в минутах по-русски
+/// Форматирует длительность в минутах на языке [l10n]
+///
+/// Нулевая часть опускается, кроме нулевой длительности целиком
 ///
 /// ```dart
-/// formatDurationMinutes(45); // '45 минут'
-/// formatDurationMinutes(32); // '32 минуты'
-/// formatDurationMinutes(60); // '1 час'
-/// formatDurationMinutes(75); // '1 час 15 минут'
-/// formatDurationMinutes(120); // '2 часа'
+/// formatDurationMinutes(ru, 45); // '45 минут'
+/// formatDurationMinutes(ru, 75); // '1 час 15 минут'
+/// formatDurationMinutes(en, 120); // '2 hours'
 /// ```
-String formatDurationMinutes(int minutes) {
+String formatDurationMinutes(AppLocalizations l10n, int minutes) {
   final hours = minutes ~/ 60;
   final rest = minutes % 60;
 
-  final minutesPart = '$rest ${plural(rest, one: 'минута', few: 'минуты', many: 'минут')}';
+  final minutesPart = l10n.durationMinutes(rest);
   if (hours == 0) return minutesPart;
 
-  final hoursPart = '$hours ${plural(hours, one: 'час', few: 'часа', many: 'часов')}';
+  final hoursPart = l10n.durationHours(hours);
   return rest == 0 ? hoursPart : '$hoursPart $minutesPart';
 }
 

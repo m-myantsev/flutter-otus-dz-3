@@ -1,0 +1,338 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Otus.Food",
+  "@appTitle": {
+    "description": "Название приложения в заголовке окна и в списке задач"
+  },
+  "recipesTitle": "Рецепты",
+  "@recipesTitle": {
+    "description": "Заголовок экрана со списком рецептов"
+  },
+  "recipesEmpty": "Нет рецептов. Проверьте соединение с интернетом",
+  "@recipesEmpty": {
+    "description": "Пояснение на экране списка, когда рецептов нет ни на сервере, ни в локальной базе"
+  },
+  "recipesAddRecipe": "Добавить рецепт",
+  "@recipesAddRecipe": {
+    "description": "Подсказка и метка для скринридера у круглой кнопки на экране списка, открывающей форму нового рецепта"
+  },
+  "durationHours": "{count, plural, one{{count} час} few{{count} часа} many{{count} часов} other{{count} часа}}",
+  "@durationHours": {
+    "description": "Часовая часть длительности рецепта, например `2 часа` в `2 часа 15 минут`",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{count, plural, one{{count} минута} few{{count} минуты} many{{count} минут} other{{count} минуты}}",
+  "@durationMinutes": {
+    "description": "Минутная часть длительности рецепта или вся длительность, если она меньше часа",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationRecipeNameRequired": "Введите название рецепта",
+  "@validationRecipeNameRequired": {
+    "description": "Ошибка под пустым полем названия на форме рецепта"
+  },
+  "validationIngredientNameRequired": "Введите название ингредиента",
+  "@validationIngredientNameRequired": {
+    "description": "Ошибка под пустым полем названия в диалоге ингредиента"
+  },
+  "validationStepDescriptionRequired": "Введите описание шага",
+  "@validationStepDescriptionRequired": {
+    "description": "Ошибка под пустым полем описания в диалоге шага"
+  },
+  "validationIngredientCount": "Введите число больше нуля, кратное 0,25, например 1,5 или 0,75",
+  "@validationIngredientCount": {
+    "description": "Ошибка под полем количества в диалоге ингредиента, когда это не положительное число, кратное четверти"
+  },
+  "validationStepTimePart": "Число от 0 до 59",
+  "@validationStepTimePart": {
+    "description": "Ошибка под полем минут или секунд в диалоге шага, когда значение вне диапазона"
+  },
+  "validationStepDurationPositive": "Длительность должна быть больше нуля",
+  "@validationStepDurationPositive": {
+    "description": "Ошибка под полем минут в диалоге шага, когда минуты и секунды оба нулевые"
+  },
+  "stepDialogTitle": "Шаг рецепта",
+  "@stepDialogTitle": {
+    "description": "Заголовок диалога добавления и редактирования шага"
+  },
+  "stepDialogDescriptionLabel": "Описание шага",
+  "@stepDialogDescriptionLabel": {
+    "description": "Подпись многострочного поля с текстом шага в диалоге шага"
+  },
+  "stepDialogDurationLabel": "Длительность шага",
+  "@stepDialogDurationLabel": {
+    "description": "Подзаголовок над полями минут и секунд в диалоге шага"
+  },
+  "stepDialogMinutesLabel": "Минуты",
+  "@stepDialogMinutesLabel": {
+    "description": "Подпись поля минут в диалоге шага"
+  },
+  "stepDialogSecondsLabel": "Секунды",
+  "@stepDialogSecondsLabel": {
+    "description": "Подпись поля секунд в диалоге шага"
+  },
+  "stepDialogAdd": "Добавить",
+  "@stepDialogAdd": {
+    "description": "Кнопка подтверждения диалога нового шага"
+  },
+  "stepDialogSave": "Сохранить",
+  "@stepDialogSave": {
+    "description": "Кнопка подтверждения диалога при редактировании существующего шага"
+  },
+  "ingredientDialogTitle": "Ингредиент",
+  "@ingredientDialogTitle": {
+    "description": "Заголовок диалога добавления и редактирования ингредиента"
+  },
+  "ingredientDialogNameLabel": "Название ингредиента",
+  "@ingredientDialogNameLabel": {
+    "description": "Подпись поля названия с подсказками из каталога в диалоге ингредиента"
+  },
+  "ingredientDialogUnitLabel": "Единица измерения",
+  "@ingredientDialogUnitLabel": {
+    "description": "Подпись выпадающего списка единиц для нового ингредиента"
+  },
+  "ingredientDialogUnitRequired": "Выберите единицу измерения",
+  "@ingredientDialogUnitRequired": {
+    "description": "Ошибка под списком единиц, когда для нового ингредиента единица не выбрана"
+  },
+  "ingredientDialogCountLabel": "Количество",
+  "@ingredientDialogCountLabel": {
+    "description": "Подпись поля количества в диалоге ингредиента"
+  },
+  "ingredientDialogAdd": "Добавить",
+  "@ingredientDialogAdd": {
+    "description": "Кнопка подтверждения диалога нового ингредиента"
+  },
+  "ingredientDialogSave": "Сохранить",
+  "@ingredientDialogSave": {
+    "description": "Кнопка подтверждения диалога при редактировании существующего ингредиента"
+  },
+  "galleryAddPhoto": "Добавить фото",
+  "@galleryAddPhoto": {
+    "description": "Подсказка и метка для скринридера у плитки добавления фото в ленте рецепта"
+  },
+  "galleryAnalyzing": "Анализ фото",
+  "@galleryAnalyzing": {
+    "description": "Метка для скринридера у индикатора, пока на новом фото ищутся объекты"
+  },
+  "galleryPhotoLabel": "Фото {index}: {summary}",
+  "@galleryPhotoLabel": {
+    "description": "Метка для скринридера у миниатюры фото с её номером в ленте и найденными объектами",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "photoSourceCamera": "Сфотографировать",
+  "@photoSourceCamera": {
+    "description": "Пункт нижней панели фото, открывающий камеру"
+  },
+  "photoSourceAlbum": "Выбрать из альбома",
+  "@photoSourceAlbum": {
+    "description": "Пункт нижней панели фото, открывающий галерею устройства"
+  },
+  "photoSourceDelete": "Удалить",
+  "@photoSourceDelete": {
+    "description": "Пункт нижней панели фото, удаляющий открытое фото"
+  },
+  "photoSourceCancel": "Отмена",
+  "@photoSourceCancel": {
+    "description": "Кнопка закрытия нижней панели фото без выбора"
+  },
+  "favoriteAdd": "Добавить в избранное",
+  "@favoriteAdd": {
+    "description": "Метка для скринридера у кнопки-сердца, когда рецепт не в избранном"
+  },
+  "favoriteActive": "В избранном",
+  "@favoriteActive": {
+    "description": "Метка для скринридера у кнопки-сердца, когда рецепт уже в избранном"
+  },
+  "stepTileTitle": "Шаг {number}",
+  "@stepTileTitle": {
+    "description": "Заголовок карточки шага в форме нового рецепта с его порядковым номером",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "stepTileEdit": "Изменить шаг",
+  "@stepTileEdit": {
+    "description": "Подсказка и метка для скринридера у кнопки-карандаша на карточке шага в форме нового рецепта"
+  },
+  "stepTileDelete": "Удалить шаг",
+  "@stepTileDelete": {
+    "description": "Подсказка и метка для скринридера у кнопки-корзины на карточке шага в форме нового рецепта"
+  },
+  "ingredientTileEdit": "Изменить ингредиент",
+  "@ingredientTileEdit": {
+    "description": "Подсказка и метка для скринридера у кнопки-карандаша на карточке ингредиента в форме нового рецепта"
+  },
+  "ingredientTileDelete": "Удалить ингредиент",
+  "@ingredientTileDelete": {
+    "description": "Подсказка и метка для скринридера у кнопки-корзины на карточке ингредиента в форме нового рецепта"
+  },
+  "photoObjectsNone": "объекты не найдены",
+  "@photoObjectsNone": {
+    "description": "Сводка найденных объектов для скринридера, когда на фото ничего не найдено; идёт в метку фото в ленте и в полноэкранном просмотре"
+  },
+  "recipePageTitle": "Рецепт",
+  "@recipePageTitle": {
+    "description": "Заголовок страницы просмотра рецепта"
+  },
+  "recipePageShare": "Поделиться",
+  "@recipePageShare": {
+    "description": "Подсказка и метка для скринридера у кнопки `поделиться` в AppBar страницы рецепта"
+  },
+  "recipePageIngredientsTitle": "Ингредиенты",
+  "@recipePageIngredientsTitle": {
+    "description": "Заголовок секции состава на странице рецепта"
+  },
+  "recipePageIngredientsEmpty": "нет ингредиентов",
+  "@recipePageIngredientsEmpty": {
+    "description": "Заглушка на странице рецепта, когда у рецепта нет состава"
+  },
+  "recipePageCheckAvailability": "Проверить наличие",
+  "@recipePageCheckAvailability": {
+    "description": "Кнопка под составом на странице рецепта, проверяющая наличие продуктов"
+  },
+  "recipePageStepsTitle": "Шаги приготовления",
+  "@recipePageStepsTitle": {
+    "description": "Заголовок секции шагов на странице рецепта"
+  },
+  "recipePageStepsEmpty": "нет шагов приготовления",
+  "@recipePageStepsEmpty": {
+    "description": "Заглушка на странице рецепта, когда у рецепта нет шагов"
+  },
+  "recipePageStartCooking": "Начать готовить",
+  "@recipePageStartCooking": {
+    "description": "Кнопка под шагами на странице рецепта, запускающая приготовление"
+  },
+  "recipePageCommentHint": "оставить комментарий",
+  "@recipePageCommentHint": {
+    "description": "Подсказка в пустом поле нового комментария на странице рецепта"
+  },
+  "recipePageAttachPhoto": "Прикрепить фото",
+  "@recipePageAttachPhoto": {
+    "description": "Подсказка и метка для скринридера у кнопки прикрепления фото в поле комментария"
+  },
+  "recipePageSendComment": "Отправить",
+  "@recipePageSendComment": {
+    "description": "Подсказка и метка для скринридера у кнопки отправки комментария"
+  },
+  "recipePageAddPhotoFailed": "Не удалось добавить фото",
+  "@recipePageAddPhotoFailed": {
+    "description": "Сообщение внизу экрана рецепта, когда фото не получено от камеры или альбома или не сохранено"
+  },
+  "addRecipeTitle": "Новый рецепт",
+  "@addRecipeTitle": {
+    "description": "Заголовок формы создания рецепта"
+  },
+  "addRecipeNameLabel": "Название рецепта",
+  "@addRecipeNameLabel": {
+    "description": "Подпись поля названия на форме создания рецепта"
+  },
+  "addRecipeIngredientsTitle": "Ингредиенты",
+  "@addRecipeIngredientsTitle": {
+    "description": "Заголовок секции состава на форме создания рецепта"
+  },
+  "addRecipeIngredientsEmpty": "нет ингредиентов",
+  "@addRecipeIngredientsEmpty": {
+    "description": "Заглушка на форме создания рецепта, пока не добавлен ни один ингредиент"
+  },
+  "addRecipeAddIngredient": "Добавить ингредиент",
+  "@addRecipeAddIngredient": {
+    "description": "Кнопка на форме создания рецепта, открывающая диалог нового ингредиента"
+  },
+  "addRecipeStepsTitle": "Шаги приготовления",
+  "@addRecipeStepsTitle": {
+    "description": "Заголовок секции шагов на форме создания рецепта"
+  },
+  "addRecipeStepsEmpty": "нет шагов приготовления",
+  "@addRecipeStepsEmpty": {
+    "description": "Заглушка на форме создания рецепта, пока не добавлен ни один шаг"
+  },
+  "addRecipeAddStep": "Добавить шаг",
+  "@addRecipeAddStep": {
+    "description": "Кнопка на форме создания рецепта, открывающая диалог нового шага"
+  },
+  "addRecipeSave": "Сохранить рецепт",
+  "@addRecipeSave": {
+    "description": "Кнопка сохранения формы создания рецепта"
+  },
+  "addRecipeAddPhotoFailed": "Не удалось добавить фото",
+  "@addRecipeAddPhotoFailed": {
+    "description": "Сообщение внизу формы создания рецепта, когда фото не получено от камеры или альбома или не проанализировано"
+  },
+  "addRecipeSavedWithoutPhotos": "Рецепт сохранён без фото",
+  "@addRecipeSavedWithoutPhotos": {
+    "description": "Сообщение после закрытия формы, когда рецепт сохранён, а его фото записать не удалось"
+  },
+  "imagesPageCounter": "{index} из {count}",
+  "@imagesPageCounter": {
+    "description": "Заголовок полноэкранного просмотра фото с номером показанного фото и их общим числом",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "imagesPageDelete": "Удалить фото",
+  "@imagesPageDelete": {
+    "description": "Подсказка и метка для скринридера у кнопки удаления в полноэкранном просмотре фото"
+  },
+  "imagesPageDeleteTitle": "Удалить фото?",
+  "@imagesPageDeleteTitle": {
+    "description": "Заголовок диалога подтверждения удаления фото"
+  },
+  "imagesPageDeleteCancel": "Отмена",
+  "@imagesPageDeleteCancel": {
+    "description": "Кнопка диалога подтверждения, отменяющая удаление фото"
+  },
+  "imagesPageDeleteConfirm": "Удалить",
+  "@imagesPageDeleteConfirm": {
+    "description": "Кнопка диалога подтверждения, удаляющая фото"
+  },
+  "imagesPageDeleteFailed": "Не удалось удалить фото",
+  "@imagesPageDeleteFailed": {
+    "description": "Сообщение внизу экрана, когда удаление фото не записалось в хранилище"
+  },
+  "imagesPageNoObjects": "Объекты не найдены",
+  "@imagesPageNoObjects": {
+    "description": "Подпись поверх фото в полноэкранном просмотре, когда на нём не найдено ни одного объекта"
+  },
+  "commentAuthorYou": "Вы",
+  "@commentAuthorYou": {
+    "description": "Подпись автора у комментария, оставленного текущим пользователем"
+  },
+  "languageMenuTooltip": "Язык",
+  "@languageMenuTooltip": {
+    "description": "Подсказка и метка для скринридера у кнопки меню языка в AppBar списка рецептов"
+  },
+  "languageSystem": "Как в системе",
+  "@languageSystem": {
+    "description": "Пункт меню языка, при котором интерфейс следует языку устройства"
+  },
+  "languageRussian": "Русский",
+  "@languageRussian": {
+    "description": "Пункт меню языка с русским; название языка на нём самом, чтобы его узнал и тот, кто не читает текущий язык"
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Пункт меню языка с английским; название языка на нём самом, чтобы его узнал и тот, кто не читает текущий язык"
+  }
+}

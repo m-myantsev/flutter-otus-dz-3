@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_step.dart';
 import '../formatting/validators.dart';
 import '../theme/app_colors.dart';
@@ -56,6 +57,7 @@ class _StepDialogState extends State<_StepDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Dialog(
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(),
@@ -72,15 +74,15 @@ class _StepDialogState extends State<_StepDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 16,
                 children: [
-                  const Text('Шаг рецепта', style: TextStyle(fontSize: 16, color: AppColors.text)),
+                  Text(l10n.stepDialogTitle, style: const TextStyle(fontSize: 16, color: AppColors.text)),
                   TextFormField(
                     controller: _nameController,
                     minLines: 5,
                     maxLines: 5,
-                    validator: validateStepDescription,
-                    decoration: const InputDecoration(labelText: 'Описание шага', alignLabelWithHint: true),
+                    validator: (value) => validateStepDescription(context.l10n, value),
+                    decoration: InputDecoration(labelText: l10n.stepDialogDescriptionLabel, alignLabelWithHint: true),
                   ),
-                  const Text('Длительность шага', style: TextStyle(fontSize: 10, color: AppColors.text)),
+                  Text(l10n.stepDialogDurationLabel, style: const TextStyle(fontSize: 10, color: AppColors.text)),
                   Row(
                     spacing: 8,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,9 +94,14 @@ class _StepDialogState extends State<_StepDialog> {
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           // Нулевая суммарная длительность у минут в любом случае
                           validator: (value) =>
-                              validateStepTimePart(value) ??
-                              validateStepDurationTotal(minutes: value, seconds: _secondsController.text),
-                          decoration: const InputDecoration(labelText: 'Минуты', hintText: '59'),
+                              validateStepTimePart(context.l10n, value) ??
+                              validateStepDurationTotal(context.l10n, minutes: value, seconds: _secondsController.text),
+                          // Поле в половину строки, и длинная ошибка в одну строку обрезалась бы многоточием
+                          decoration: InputDecoration(
+                            labelText: l10n.stepDialogMinutesLabel,
+                            hintText: '59',
+                            errorMaxLines: 2,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -102,8 +109,12 @@ class _StepDialogState extends State<_StepDialog> {
                           controller: _secondsController,
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: validateStepTimePart,
-                          decoration: const InputDecoration(labelText: 'Секунды', hintText: '59'),
+                          validator: (value) => validateStepTimePart(context.l10n, value),
+                          decoration: InputDecoration(
+                            labelText: l10n.stepDialogSecondsLabel,
+                            hintText: '59',
+                            errorMaxLines: 2,
+                          ),
                         ),
                       ),
                     ],
@@ -117,7 +128,7 @@ class _StepDialogState extends State<_StepDialog> {
                         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                       onPressed: _submit,
-                      child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
+                      child: Text(widget.initial == null ? l10n.stepDialogAdd : l10n.stepDialogSave),
                     ),
                   ),
                 ],

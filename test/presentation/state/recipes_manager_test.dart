@@ -160,7 +160,7 @@ void main() {
 
       final recipe = await manager.saveRecipe(name: 'Новый', ingredients: newIngredients, steps: newSteps);
 
-      expect(recipe.id, 100, reason: 'идентификатор присвоен «сервером»');
+      expect(recipe.id, 100, reason: 'идентификатор присвоен `сервером`');
       expect(recipe.duration, 2, reason: '120 секунд шагов округляются до 2 минут');
       expect(manager.recipes.map((r) => r.id), contains(100));
       expect(store.loadRecipes().map((r) => r.id), contains(100), reason: 'сохранено и локально');
@@ -430,7 +430,8 @@ void main() {
 
       final comment = manager.addComment(0, 'Очень вкусно!');
 
-      expect(comment.author, 'Вы');
+      expect(comment.isOwn, isTrue);
+      expect(comment.author, isEmpty, reason: 'подпись собственного комментария берётся из локализации');
       expect(comment.text, 'Очень вкусно!');
       expect(comment.date.isBefore(before), isFalse, reason: 'датой комментария является момент добавления');
       expect(notified, isTrue);
@@ -443,6 +444,7 @@ void main() {
         contains('Очень вкусно!'),
         reason: 'комментарий сохранён в локальной базе',
       );
+      expect(reopened.comments(0).last.isOwn, isTrue, reason: 'признак собственного комментария сохранён');
     });
   });
 

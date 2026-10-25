@@ -95,10 +95,10 @@ int _createInterpreter(Uint8List model) {
   try {
     return Interpreter.fromBuffer(model, options: options).address;
   } on ArgumentError catch (error) {
-    throw ObjectDetectionException('Интерпретатор TFLite не создан: $error');
+    throw ObjectDetectionException('Failed to create TFLite interpreter: $error');
   } on UnsupportedError catch (error) {
     // Пакет ищет библиотеку по нескольким путям и, не найдя, бросает `UnsupportedError`
-    throw ObjectDetectionException('Интерпретатор TFLite не создан: $error');
+    throw ObjectDetectionException('Failed to create TFLite interpreter: $error');
   } finally {
     options.delete();
   }

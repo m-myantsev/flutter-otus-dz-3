@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe.dart';
 import '../formatting/duration_format.dart';
 import '../theme/app_colors.dart';
@@ -63,7 +64,7 @@ class RecipeCard extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              formatDurationMinutes(recipe.duration),
+                              formatDurationMinutes(context.l10n, recipe.duration),
                               style: const TextStyle(fontSize: 16, color: AppColors.accent),
                             ),
                           ),

@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:recipes/presentation/widgets/image_placeholder.dart';
 import 'package:recipes/presentation/widgets/recipe_photo.dart';
 
+import '../../helpers.dart';
+
 void main() {
-  Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+  Widget wrap(Widget child) => localizedApp(Scaffold(body: child));
 
   testWidgets('пустой адрес сразу даёт заглушку', (tester) async {
     await tester.pumpWidget(wrap(const RecipePhoto(photo: '')));

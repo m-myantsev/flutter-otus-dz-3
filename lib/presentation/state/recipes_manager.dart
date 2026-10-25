@@ -26,9 +26,6 @@ import '../vision/annotate_detections.dart';
 class RecipesManager extends ChangeNotifier {
   RecipesManager({required this._api, required this._store, this._detector});
 
-  // TODO: Заменить именем авторизованного пользователя
-  static const String _currentUser = 'Вы';
-
   final FoodApi _api;
   final RecipesStore _store;
 
@@ -194,7 +191,8 @@ class RecipesManager extends ChangeNotifier {
 
   /// Добавляет комментарий текущего пользователя к рецепту и возвращает его
   Comment addComment(int recipeId, String text) {
-    final comment = Comment(author: _currentUser, text: text, date: DateTime.now());
+    // Имя не хранится, потому что подпись `Вы` зависит от языка интерфейса
+    final comment = Comment(author: '', text: text, date: DateTime.now(), isOwn: true);
     final comments = _cachedComments(recipeId)..add(comment);
 
     unawaited(_store.saveComments(recipeId, comments));
@@ -272,7 +270,7 @@ class RecipesManager extends ChangeNotifier {
     try {
       return await request();
     } on Exception catch (error) {
-      debugPrint('Запрос к серверу не удался. $error');
+      debugPrint('Server request failed. $error');
       return null;
     }
   }
@@ -282,7 +280,7 @@ class RecipesManager extends ChangeNotifier {
     try {
       return await detector.detect(photo);
     } on Exception catch (error) {
-      debugPrint('Поиск объектов на фото не удался. $error');
+      debugPrint('Object detection on photo failed. $error');
       return const [];
     }
   }

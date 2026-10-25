@@ -15,17 +15,18 @@ void main() {
   group('RecipeImagesPage', () {
     /// Открывает просмотр поверх пустого экрана, чтобы закрытию было куда возвращаться
     ///
-    /// При [failOnSave] хранилище отказывает в записи фото
+    /// При [failOnSave] хранилище отказывает в записи фото, без [locale] страница строится на русском
     Future<RecipesManager> pumpPage(
       WidgetTester tester, {
       List<RecipeImage>? images,
       int initialIndex = 0,
       bool failOnSave = false,
+      Locale locale = const Locale('ru'),
     }) async {
       final manager = await createTestManager(
         store: InMemoryRecipesStore(images: {0: images ?? fixtureImages(2)}, failOnSaveImages: failOnSave),
       );
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(localizedApp(const Scaffold(), locale: locale));
       final context = tester.element(find.byType(Scaffold));
       unawaited(
         Navigator.push(context, RecipeImagesPage.route(manager: manager, recipeId: 0, initialIndex: initialIndex)),
@@ -72,7 +73,38 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('удаление спрашивает подтверждение, а «Отмена» ничего не удаляет', (tester) async {
+    testWidgets('на английском счётчик, подпись-заглушка и метка фото переведены', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpPage(
+        tester,
+        images: [
+          RecipeImage(bytes: fixtureJpeg()),
+          fixtureImage(),
+        ],
+        locale: const Locale('en'),
+      );
+
+      expect(find.text('1 of 2'), findsOneWidget);
+      expect(find.text('No objects found'), findsOneWidget);
+      expect(find.bySemanticsLabel('no objects found'), findsOneWidget);
+      expect(find.byTooltip('Delete photo'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('на английском диалог удаления и сообщение об ошибке переведены', (tester) async {
+      await pumpPage(tester, failOnSave: true, locale: const Locale('en'));
+
+      await tester.tap(find.byTooltip('Delete photo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete photo?'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't delete photo"), findsOneWidget);
+    });
+
+    testWidgets('удаление спрашивает подтверждение, а `Отмена` ничего не удаляет', (tester) async {
       final manager = await pumpPage(tester, images: fixtureImages(3), initialIndex: 1);
       await tester.tap(find.byTooltip('Удалить фото'));
       await tester.pumpAndSettle();
@@ -147,7 +179,8 @@ void main() {
 
     testWidgets('закрытая страница отписана от менеджера', (tester) async {
       final manager = await pumpPage(tester);
-      await tester.pageBack();
+      // `pageBack` ищет кнопку по английской подсказке `Back`, а в русской локали она называется иначе
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       expect(find.byType(RecipeImagesPage), findsNothing);
 
@@ -160,7 +193,7 @@ void main() {
     testWidgets('удаление из черновика убирает фото из его списка', (tester) async {
       final images = ValueNotifier(fixtureImages(3));
       addTearDown(images.dispose);
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(localizedApp(const Scaffold()));
       final context = tester.element(find.byType(Scaffold));
       unawaited(Navigator.push(context, RecipeImagesPage.routeDraft(images: images, initialIndex: 1)));
       await tester.pumpAndSettle();

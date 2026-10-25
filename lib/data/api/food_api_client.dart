@@ -126,7 +126,7 @@ class FoodApiClient implements FoodApi {
 
     final id = response.data?['id'];
     if (id is! num) {
-      throw FormatException('$path не вернул идентификатор созданного объекта');
+      throw FormatException('$path did not return the id of the created object');
     }
 
     return id.toInt();

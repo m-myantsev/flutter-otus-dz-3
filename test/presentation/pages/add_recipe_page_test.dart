@@ -9,7 +9,9 @@ import 'package:recipes/presentation/pages/recipe_images_page.dart';
 import 'package:recipes/presentation/state/recipes_manager.dart';
 import 'package:recipes/presentation/theme/app_colors.dart';
 import 'package:recipes/presentation/widgets/recipe_gallery.dart';
+import 'package:recipes/presentation/widgets/recipe_ingredient_tile.dart';
 import 'package:recipes/presentation/widgets/recipe_photo.dart';
+import 'package:recipes/presentation/widgets/recipe_step_tile.dart';
 
 import '../../fakes.dart';
 import '../../fixtures.dart';
@@ -46,7 +48,7 @@ void main() {
     final manager = await createTestManager(api: api);
     final recipesBefore = manager.recipes.length;
 
-    await tester.pumpWidget(MaterialApp(home: AddRecipePage(manager: manager)));
+    await tester.pumpWidget(localizedApp(AddRecipePage(manager: manager, picker: FakePhotoPicker())));
     await fillForm(tester);
 
     // Первое нажатие уводит сохранение в ожидание ответа сервера
@@ -74,11 +76,13 @@ void main() {
     final unit = OfflineMeasureUnits.all.first;
 
     // Форма открывается поверх пустого экрана, чтобы после сохранения ей было куда закрыться
-    await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+    await tester.pumpWidget(localizedApp(const Scaffold()));
     unawaited(
       Navigator.push(
         tester.element(find.byType(Scaffold)),
-        MaterialPageRoute<void>(builder: (_) => AddRecipePage(manager: manager)),
+        MaterialPageRoute<void>(
+          builder: (_) => AddRecipePage(manager: manager, picker: FakePhotoPicker()),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -115,6 +119,26 @@ void main() {
     expect(api.createRecipeCalls, 0, reason: 'рецепт с локальным ингредиентом на сервер не отправляется');
   });
 
+  testWidgets('на английском заголовок, поле названия, секции и кнопки переведены', (tester) async {
+    final manager = await createTestManager();
+    await tester.pumpWidget(
+      localizedApp(
+        AddRecipePage(manager: manager, picker: FakePhotoPicker()),
+        locale: const Locale('en'),
+      ),
+    );
+
+    expect(find.text('New recipe'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Recipe name'), findsOneWidget);
+    expect(find.text('Ingredients'), findsOneWidget);
+    expect(find.text('no ingredients'), findsOneWidget);
+    expect(find.text('Add ingredient'), findsOneWidget);
+    expect(find.text('Cooking steps'), findsOneWidget);
+    expect(find.text('no cooking steps'), findsOneWidget);
+    expect(find.text('Add step'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Save recipe'), findsOneWidget);
+  });
+
   group('лента фото', () {
     /// Миниатюры фото черновика, других `Image` внутри ленты нет
     final thumbnails = find.descendant(of: find.byType(RecipeGallery), matching: find.byType(Image));
@@ -124,7 +148,7 @@ void main() {
 
     /// Открывает форму поверх пустого экрана, чтобы закрытию формы было куда возвращаться
     Future<void> pumpForm(WidgetTester tester, RecipesManager manager, FakePhotoPicker picker) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(localizedApp(const Scaffold()));
       final context = tester.element(find.byType(Scaffold));
       unawaited(
         Navigator.push(
@@ -297,9 +321,13 @@ void main() {
       await pumpForm(tester, await createTestManager(store: store), FakePhotoPicker());
       await fillForm(tester);
 
-      // Иконки карточек ингредиента и шага, у остальных кнопок формы есть подсказки
-      Iterable<IconButton> tileButtons() =>
-          tester.widgetList<IconButton>(find.byType(IconButton)).where((b) => b.tooltip == null);
+      // Иконки карточек ингредиента и шага
+      Iterable<IconButton> tileButtons() => tester.widgetList<IconButton>(
+        find.descendant(
+          of: find.byWidgetPredicate((widget) => widget is RecipeIngredientTile || widget is RecipeStepTile),
+          matching: find.byType(IconButton),
+        ),
+      );
       expect(tileButtons().map((b) => (b.icon as Icon).color), everyElement(AppColors.primary));
 
       final gate = await startSavingOnGate(tester, store);

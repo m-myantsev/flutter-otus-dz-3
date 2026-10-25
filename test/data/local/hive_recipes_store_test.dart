@@ -87,11 +87,12 @@ void main() {
 
   test('комментарии сохраняются по рецепту', () async {
     final store = await openStore();
-    final comment = Comment(author: 'Вы', text: 'Супер', date: DateTime(2026, 8, 12));
+    final comment = Comment(author: '', text: 'Супер', date: DateTime(2026, 8, 12), isOwn: true);
 
     await store.saveComments(3, [comment]);
 
     expect(store.loadComments(3).single.text, 'Супер');
+    expect(store.loadComments(3).single.isOwn, isTrue);
     expect(store.loadComments(4), isEmpty);
   });
 

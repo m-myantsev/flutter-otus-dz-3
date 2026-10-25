@@ -9,6 +9,8 @@ import 'package:recipes/presentation/theme/app_colors.dart';
 import 'package:recipes/presentation/widgets/favorite_button.dart';
 import 'package:rive/rive.dart' as rive;
 
+import '../../helpers.dart';
+
 void main() {
   setUpAll(() async => expect(await rive.RiveNative.init(), isTrue));
 
@@ -24,13 +26,13 @@ void main() {
       required bool isFavorite,
       VoidCallback? onPressed,
       AssetBundle? bundle,
+      Locale locale = const Locale('ru'),
     }) {
       return tester.pumpWidget(
-        // Обёртка есть всегда, чтобы форма дерева не зависела от `bundle` и `State` кнопки не пересоздавался между вызовами
-        DefaultAssetBundle(
-          bundle: bundle ?? rootBundle,
-          child: Directionality(
-            textDirection: TextDirection.ltr,
+        localizedApp(
+          // Обёртка есть всегда, чтобы форма дерева не зависела от `bundle` и `State` кнопки не пересоздавался между вызовами
+          DefaultAssetBundle(
+            bundle: bundle ?? rootBundle,
             child: Center(
               child: RepaintBoundary(
                 key: boundaryKey,
@@ -38,6 +40,7 @@ void main() {
               ),
             ),
           ),
+          locale: locale,
         ),
       );
     }
@@ -198,6 +201,19 @@ void main() {
           hasTapAction: true,
         ),
       );
+
+      handle.dispose();
+    });
+
+    testWidgets('на английском метка для скринридера переведена', (tester) async {
+      final handle = tester.ensureSemantics();
+      final bundle = _PendingAssetBundle();
+
+      await pumpButton(tester, isFavorite: false, bundle: bundle, locale: const Locale('en'));
+      expect(find.bySemanticsLabel('Add to favorites'), findsOneWidget);
+
+      await pumpButton(tester, isFavorite: true, bundle: bundle, locale: const Locale('en'));
+      expect(find.bySemanticsLabel('In favorites'), findsOneWidget);
 
       handle.dispose();
     });

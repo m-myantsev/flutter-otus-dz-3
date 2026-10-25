@@ -7,7 +7,6 @@ import '../../domain/entities/measure_unit.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/entities/recipe_image.dart';
 import '../../domain/repositories/recipes_store.dart';
-import 'hive/hive_registrar.g.dart';
 
 /// Локальное хранилище на Hive
 class HiveRecipesStore implements RecipesStore {
@@ -31,12 +30,10 @@ class HiveRecipesStore implements RecipesStore {
   /// Фото живут только на устройстве
   final Box<List> _images;
 
-  /// Инициализирует Hive, регистрирует адаптеры и открывает боксы приложения
+  /// Открывает хранилища рецептов
+  ///
+  /// Hive к этому моменту уже инициализирован и адаптеры зарегистрированы `initHiveStorage`
   static Future<HiveRecipesStore> open() async {
-    await Hive.initFlutter();
-
-    Hive.registerAdapters();
-
     return HiveRecipesStore(
       recipes: await Hive.openBox<Recipe>('recipes'),
       ingredients: await Hive.openBox<Ingredient>('ingredients'),

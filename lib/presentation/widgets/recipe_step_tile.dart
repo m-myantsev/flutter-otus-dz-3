@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_step.dart';
 import '../formatting/duration_format.dart';
 import '../theme/app_colors.dart';
@@ -45,7 +46,7 @@ class RecipeStepTile extends StatelessWidget {
           spacing: 8,
           children: [
             Text(
-              'Шаг $number',
+              context.l10n.stepTileTitle(number),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.text),
             ),
             Text(step.name, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
@@ -58,10 +59,12 @@ class RecipeStepTile extends StatelessWidget {
                 const Spacer(),
                 // Цвет иконки задан явно, поэтому выключенная кнопка сама не тускнеет
                 IconButton(
+                  tooltip: context.l10n.stepTileEdit,
                   onPressed: onEdit,
                   icon: Icon(Icons.edit_outlined, color: onEdit == null ? AppColors.placeholder : AppColors.primary),
                 ),
                 IconButton(
+                  tooltip: context.l10n.stepTileDelete,
                   onPressed: onDelete,
                   icon: Icon(Icons.delete_outline, color: onDelete == null ? AppColors.placeholder : AppColors.primary),
                 ),

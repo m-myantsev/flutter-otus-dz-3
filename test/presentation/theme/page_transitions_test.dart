@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recipes/presentation/theme/app_theme.dart';
 
+import '../../helpers.dart';
+
 void main() {
   group('Переход между страницами', () {
     /// Суммарная непрозрачность [target] с учётом всех затуханий над ним
@@ -13,9 +15,8 @@ void main() {
     /// Выводит приложение с кнопкой, открывающей вторую страницу
     Future<void> pumpApp(WidgetTester tester) {
       return tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.light,
-          home: Builder(
+        localizedApp(
+          Builder(
             builder: (context) => Scaffold(
               body: Center(
                 child: TextButton(
@@ -30,6 +31,7 @@ void main() {
               ),
             ),
           ),
+          theme: AppTheme.light,
         ),
       );
     }

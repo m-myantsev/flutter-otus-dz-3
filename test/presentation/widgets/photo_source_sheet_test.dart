@@ -3,17 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:recipes/presentation/theme/app_colors.dart';
 import 'package:recipes/presentation/widgets/photo_source_sheet.dart';
 
+import '../../helpers.dart';
+
 void main() {
   group('showPhotoSourceSheet', () {
     /// Выбор, которым закрылся последний открытый шит
     PhotoSourceChoice? choice;
 
     /// Открывает нижнюю панель с кнопками в минимальном окружении и запоминает его результат
-    Future<void> pumpSheet(WidgetTester tester, {bool canTakePhoto = true, bool canDelete = true}) async {
+    Future<void> pumpSheet(
+      WidgetTester tester, {
+      bool canTakePhoto = true,
+      bool canDelete = true,
+      Locale locale = const Locale('ru'),
+    }) async {
       choice = null;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        localizedApp(
+          Scaffold(
             body: Builder(
               builder: (context) => TextButton(
                 onPressed: () async {
@@ -23,6 +30,7 @@ void main() {
               ),
             ),
           ),
+          locale: locale,
         ),
       );
 
@@ -37,6 +45,15 @@ void main() {
       expect(find.text('Выбрать из альбома'), findsOneWidget);
       expect(find.text('Удалить'), findsOneWidget);
       expect(find.text('Отмена'), findsOneWidget);
+    });
+
+    testWidgets('на английском пункты и отмена переведены', (tester) async {
+      await pumpSheet(tester, locale: const Locale('en'));
+
+      expect(find.text('Take photo'), findsOneWidget);
+      expect(find.text('Choose from album'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
     });
 
     testWidgets('тап по отмене закрывает шит', (tester) async {

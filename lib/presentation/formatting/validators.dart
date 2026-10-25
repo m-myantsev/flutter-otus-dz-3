@@ -1,3 +1,5 @@
+import '../../core/l10n/app_localizations.dart';
+
 /// Пустое ли значение после обрезки пробелов
 bool _isBlank(String? value) => value == null || value.trim().isEmpty;
 
@@ -5,13 +7,19 @@ bool _isBlank(String? value) => value == null || value.trim().isEmpty;
 String? _requireNonBlank(String? value, String message) => _isBlank(value) ? message : null;
 
 /// Проверяет, что название рецепта является непустым после обрезки пробелов
-String? validateRecipeName(String? value) => _requireNonBlank(value, 'Введите название рецепта');
+String? validateRecipeName(AppLocalizations l10n, String? value) {
+  return _requireNonBlank(value, l10n.validationRecipeNameRequired);
+}
 
 /// Проверяет, что название ингредиента является непустым после обрезки пробелов
-String? validateIngredientName(String? value) => _requireNonBlank(value, 'Введите название ингредиента');
+String? validateIngredientName(AppLocalizations l10n, String? value) {
+  return _requireNonBlank(value, l10n.validationIngredientNameRequired);
+}
 
 /// Проверяет, что описание шага является непустым после обрезки пробелов
-String? validateStepDescription(String? value) => _requireNonBlank(value, 'Введите описание шага');
+String? validateStepDescription(AppLocalizations l10n, String? value) {
+  return _requireNonBlank(value, l10n.validationStepDescriptionRequired);
+}
 
 /// Количество ингредиента из текстового значения
 ///
@@ -20,20 +28,20 @@ String? validateStepDescription(String? value) => _requireNonBlank(value, 'Вв�
 double? parseIngredientCount(String? value) => double.tryParse((value ?? '').trim().replaceAll(',', '.'));
 
 /// Проверяет, что количество ингредиента является числом больше нуля, кратным четверти единицы
-String? validateIngredientCount(String? value) {
+String? validateIngredientCount(AppLocalizations l10n, String? value) {
   final count = parseIngredientCount(value);
   final isValid = count != null && count > 0 && (count * 4) % 1 == 0;
-  return isValid ? null : 'Введите число больше нуля, кратное 0,25, например 1,5 или 0,75';
+  return isValid ? null : l10n.validationIngredientCount;
 }
 
-/// Проверяет, что время шага является целым числом больше нуля и меньше 59
-String? validateStepTimePart(String? value) {
+/// Проверяет, что время шага является целым числом больше нуля и меньше 60
+String? validateStepTimePart(AppLocalizations l10n, String? value) {
   if (_isBlank(value)) {
     return null;
   }
 
   final parsed = int.tryParse(value!);
-  return (parsed == null || parsed < 0 || parsed > 59) ? 'Число от 0 до 59' : null;
+  return (parsed == null || parsed < 0 || parsed > 59) ? l10n.validationStepTimePart : null;
 }
 
 /// Длительность шага в секундах из текстовых значений
@@ -44,6 +52,6 @@ int stepDurationSeconds({required String? minutes, required String? seconds}) {
 }
 
 /// Проверяет, что суммарная длительность шага больше нуля
-String? validateStepDurationTotal({required String? minutes, required String? seconds}) {
-  return stepDurationSeconds(minutes: minutes, seconds: seconds) > 0 ? null : 'Длительность должна быть больше нуля';
+String? validateStepDurationTotal(AppLocalizations l10n, {required String? minutes, required String? seconds}) {
+  return stepDurationSeconds(minutes: minutes, seconds: seconds) > 0 ? null : l10n.validationStepDurationPositive;
 }

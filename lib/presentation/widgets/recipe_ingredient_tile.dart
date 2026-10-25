@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_ingredient.dart';
 import '../formatting/count_format.dart';
 import '../theme/app_colors.dart';
@@ -50,10 +51,12 @@ class RecipeIngredientTile extends StatelessWidget {
             ),
             // Цвет иконки задан явно, поэтому выключенная кнопка сама не тускнеет
             IconButton(
+              tooltip: context.l10n.ingredientTileEdit,
               onPressed: onEdit,
               icon: Icon(Icons.edit_outlined, color: onEdit == null ? AppColors.placeholder : AppColors.primary),
             ),
             IconButton(
+              tooltip: context.l10n.ingredientTileDelete,
               onPressed: onDelete,
               icon: Icon(Icons.delete_outline, color: onDelete == null ? AppColors.placeholder : AppColors.primary),
             ),

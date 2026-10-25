@@ -195,13 +195,14 @@ class CommentAdapter extends TypeAdapter<Comment> {
       date: fields[2] as DateTime,
       avatar: fields[3] == null ? '' : fields[3] as String,
       photo: fields[4] == null ? '' : fields[4] as String,
+      isOwn: fields[5] == null ? false : fields[5] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Comment obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.author)
       ..writeByte(1)
@@ -211,7 +212,9 @@ class CommentAdapter extends TypeAdapter<Comment> {
       ..writeByte(3)
       ..write(obj.avatar)
       ..writeByte(4)
-      ..write(obj.photo);
+      ..write(obj.photo)
+      ..writeByte(5)
+      ..write(obj.isOwn);
   }
 
   @override

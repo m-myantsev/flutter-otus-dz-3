@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recipes/domain/entities/comment.dart';
 import 'package:recipes/domain/entities/ingredient.dart';
 import 'package:recipes/domain/entities/measure_unit.dart';
 
@@ -22,5 +23,22 @@ void main() {
     expect(flour, equals(copy));
     expect(flour.hashCode, copy.hashCode);
     expect(flour, isNot(equals(other)));
+  });
+
+  test('комментарии равны при совпадении всех полей и различаются признаком собственного', () {
+    final comment = Comment(author: '', text: 'Вкусно', date: DateTime(2026, 8, 12), avatar: 'a.png', photo: 'p.jpg');
+    final copy = Comment(author: '', text: 'Вкусно', date: DateTime(2026, 8, 12), avatar: 'a.png', photo: 'p.jpg');
+    final own = Comment(
+      author: '',
+      text: 'Вкусно',
+      date: DateTime(2026, 8, 12),
+      avatar: 'a.png',
+      photo: 'p.jpg',
+      isOwn: true,
+    );
+
+    expect(comment, equals(copy));
+    expect(comment.hashCode, copy.hashCode);
+    expect(comment, isNot(equals(own)));
   });
 }

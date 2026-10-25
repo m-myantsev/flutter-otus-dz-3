@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../theme/app_colors.dart';
 
 /// Выбор пользователя в нижней панели фото
@@ -36,6 +37,7 @@ class _PhotoSourceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -43,18 +45,18 @@ class _PhotoSourceSheet extends StatelessWidget {
         children: [
           // Без камеры пункт остаётся видимым, но неактивным, чтобы состав панели не прыгал
           _PhotoSourceItem(
-            label: 'Сфотографировать',
+            label: l10n.photoSourceCamera,
             onPressed: canTakePhoto ? () => Navigator.pop(context, PhotoSourceChoice.camera) : null,
           ),
           _divider,
           _PhotoSourceItem(
-            label: 'Выбрать из альбома',
+            label: l10n.photoSourceAlbum,
             onPressed: () => Navigator.pop(context, PhotoSourceChoice.album),
           ),
           if (canDelete) ...[
             _divider,
             _PhotoSourceItem(
-              label: 'Удалить',
+              label: l10n.photoSourceDelete,
               color: AppColors.danger,
               onPressed: () => Navigator.pop(context, PhotoSourceChoice.delete),
             ),
@@ -71,7 +73,7 @@ class _PhotoSourceSheet extends StatelessWidget {
                 textStyle: const TextStyle(fontSize: 16),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(l10n.photoSourceCancel),
             ),
           ),
           const SizedBox(height: 34),

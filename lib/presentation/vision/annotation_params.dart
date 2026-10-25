@@ -16,5 +16,5 @@ abstract final class AnnotationParams {
   static const platePadding = 4;
 
   /// Причина ошибки для нечитаемого фото
-  static const undecodableMessage = 'Фото не декодируется';
+  static const undecodableMessage = 'Photo cannot be decoded';
 }

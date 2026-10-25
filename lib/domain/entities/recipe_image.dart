@@ -11,7 +11,4 @@ class RecipeImage {
 
   /// Найденные объекты, не больше пяти, по убыванию вероятности
   final List<DetectedObject> objects;
-
-  /// Подписи объектов через запятую или сообщение, что ничего не найдено
-  String get summary => objects.isEmpty ? 'объекты не найдены' : objects.map((o) => o.caption).join(', ');
 }

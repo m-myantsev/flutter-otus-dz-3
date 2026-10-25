@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:recipes/data/local/hive/hive_adapters.dart';
 import 'package:recipes/data/local/hive/hive_registrar.g.dart';
 import 'package:recipes/domain/entities/comment.dart';
 import 'package:recipes/domain/entities/ingredient.dart';
@@ -73,7 +74,7 @@ void main() {
   });
 
   test('список комментариев с датой переживает запись и чтение с диска', () async {
-    final comment = Comment(author: 'Вы', text: 'Отлично!', date: DateTime(2026, 8, 12));
+    final comment = Comment(author: 'anna', text: 'Отлично!', date: DateTime(2026, 8, 12));
 
     var box = await Hive.openBox<List>('comments_test');
     await box.put('1', [comment]);
@@ -82,11 +83,46 @@ void main() {
     box = await Hive.openBox<List>('comments_test');
     final restored = box.get('1')!.cast<Comment>();
 
-    expect(restored.single.author, 'Вы');
+    expect(restored.single.author, 'anna');
     expect(restored.single.text, 'Отлично!');
     expect(restored.single.date, DateTime(2026, 8, 12));
     expect(restored.single.avatar, '');
     expect(restored.single.photo, '');
+  });
+
+  test('сохраняет признак собственного комментария', () async {
+    final comment = Comment(author: '', text: 'Моё', date: DateTime(2026, 8, 12), isOwn: true);
+
+    var box = await Hive.openBox<List>('own_comments_test');
+    await box.put('1', [comment]);
+    await box.close();
+
+    box = await Hive.openBox<List>('own_comments_test');
+    final restored = box.get('1')!.cast<Comment>().single;
+
+    expect(restored.isOwn, isTrue);
+    expect(restored.author, '');
+  });
+
+  test('читает комментарий старой версии без isOwn', () async {
+    // Старый адаптер пишет запись так, как она лежит на устройствах до появления признака
+    Hive.registerAdapter(_LegacyCommentAdapter(), override: true);
+    // Остальные тесты файла должны работать с актуальным адаптером, даже если этот упадёт
+    addTearDown(() => Hive.registerAdapter(CommentAdapter(), override: true));
+
+    var box = await Hive.openBox<List>('legacy_comments_test');
+    // Старый адаптер признак не пишет, поэтому `false` при чтении может дать только дефолт для отсутствующего поля
+    await box.put('1', [Comment(author: 'Вы', text: 'Старый', date: DateTime(2025, 1, 2), isOwn: true)]);
+    await box.close();
+
+    Hive.registerAdapter(CommentAdapter(), override: true);
+    box = await Hive.openBox<List>('legacy_comments_test');
+    final restored = box.get('1')!.cast<Comment>().single;
+
+    expect(restored.isOwn, isFalse);
+    expect(restored.author, 'Вы');
+    expect(restored.text, 'Старый');
+    expect(restored.date, DateTime(2025, 1, 2));
   });
 
   test('фото с объектами переживает запись и чтение с диска', () async {
@@ -104,4 +140,31 @@ void main() {
     expect(restored.objects.first.score, 0.87);
     expect(restored.objects.first.box.right, 0.5);
   });
+}
+
+/// Адаптер комментария в версии до появления `isOwn`, с прежним `typeId` и прежними индексами полей
+///
+/// `write` скопирован из сгенерированного адаптера той версии
+class _LegacyCommentAdapter extends TypeAdapter<Comment> {
+  @override
+  final typeId = 5;
+
+  @override
+  Comment read(BinaryReader reader) => throw UnimplementedError('Legacy adapter is used for writing only');
+
+  @override
+  void write(BinaryWriter writer, Comment obj) {
+    writer
+      ..writeByte(5)
+      ..writeByte(0)
+      ..write(obj.author)
+      ..writeByte(1)
+      ..write(obj.text)
+      ..writeByte(2)
+      ..write(obj.date)
+      ..writeByte(3)
+      ..write(obj.avatar)
+      ..writeByte(4)
+      ..write(obj.photo);
+  }
 }

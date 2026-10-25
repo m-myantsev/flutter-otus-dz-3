@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/ingredient.dart';
 import '../../domain/entities/measure_unit.dart';
 import '../../domain/entities/recipe_ingredient.dart';
@@ -19,26 +21,32 @@ Future<RecipeIngredient?> showIngredientDialog(
 }) {
   return showDialog<RecipeIngredient>(
     context: context,
-    builder: (context) => _IngredientDialog(manager: manager, initial: initial),
+    builder: (context) => _IngredientDialog(
+      manager: manager,
+      initial: initial,
+      decimalSeparator: NumberFormat.decimalPattern(
+        Localizations.localeOf(context).toLanguageTag(),
+      ).symbols.DECIMAL_SEP,
+    ),
   );
 }
 
 /// Количество для поля ввода
 ///
-/// Целые будут без дробной части, а дробные будут с запятой
+/// Целые будут без дробной части, а дробные будут с разделителем [decimalSeparator]
 ///
 /// ```dart
-/// _countText(8); // '8'
-/// _countText(1.5); // '1,5'
-/// _countText(0.75); // '0,75'
-/// _countText(null); // ''
+/// _countText(8, ','); // '8'
+/// _countText(1.5, ','); // '1,5'
+/// _countText(0.75, '.'); // '0.75'
+/// _countText(null, ','); // ''
 /// ```
-String _countText(double? count) {
+String _countText(double? count, String decimalSeparator) {
   if (count == null) {
     return '';
   }
 
-  return count % 1 == 0 ? '${count.toInt()}' : count.toString().replaceAll('.', ',');
+  return count % 1 == 0 ? '${count.toInt()}' : count.toString().replaceAll('.', decimalSeparator);
 }
 
 /// Диалог ввода ингредиента
@@ -46,13 +54,18 @@ String _countText(double? count) {
 /// Название можно выбрать из каталога, и единица измерения возьмётся из него
 /// Название можно ввести новое, и тогда появляется выбор единицы, а ингредиент добавится в каталог
 class _IngredientDialog extends StatefulWidget {
-  const _IngredientDialog({required this.manager, this.initial});
+  const _IngredientDialog({required this.manager, this.initial, required this.decimalSeparator});
 
   /// Источник каталога ингредиентов и единиц измерения
   final RecipesManager manager;
 
   /// Исходная позиция состава при редактировании
   final RecipeIngredient? initial;
+
+  /// Разделитель дробной части в языке интерфейса
+  ///
+  /// Исходное количество показывается так же, как в подсказке валидации, а разбор принимает оба разделителя
+  final String decimalSeparator;
 
   @override
   State<_IngredientDialog> createState() => _IngredientDialogState();
@@ -61,7 +74,7 @@ class _IngredientDialog extends StatefulWidget {
 class _IngredientDialogState extends State<_IngredientDialog> {
   final _formKey = GlobalKey<FormState>();
   late String _name = widget.initial?.ingredient.name ?? '';
-  late final _countController = TextEditingController(text: _countText(widget.initial?.count));
+  late final _countController = TextEditingController(text: _countText(widget.initial?.count, widget.decimalSeparator));
 
   /// Справочник единиц на момент открытия диалога
   ///
@@ -116,6 +129,7 @@ class _IngredientDialogState extends State<_IngredientDialog> {
   @override
   Widget build(BuildContext context) {
     final existing = _existing;
+    final l10n = context.l10n;
     return Dialog(
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(),
@@ -132,7 +146,7 @@ class _IngredientDialogState extends State<_IngredientDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 16,
                 children: [
-                  const Text('Ингредиент', style: TextStyle(fontSize: 16, color: AppColors.text)),
+                  Text(l10n.ingredientDialogTitle, style: const TextStyle(fontSize: 16, color: AppColors.text)),
                   Autocomplete<Ingredient>(
                     initialValue: TextEditingValue(text: _name),
                     displayStringForOption: (ingredient) => ingredient.name,
@@ -149,9 +163,9 @@ class _IngredientDialogState extends State<_IngredientDialog> {
                       return TextFormField(
                         controller: controller,
                         focusNode: focusNode,
-                        validator: validateIngredientName,
+                        validator: (value) => validateIngredientName(context.l10n, value),
                         onChanged: (value) => setState(() => _name = value),
-                        decoration: const InputDecoration(labelText: 'Название ингредиента'),
+                        decoration: InputDecoration(labelText: l10n.ingredientDialogNameLabel),
                       );
                     },
                   ),
@@ -161,15 +175,20 @@ class _IngredientDialogState extends State<_IngredientDialog> {
                       initialValue: _newIngredientUnit,
                       items: [for (final unit in _units) DropdownMenuItem(value: unit, child: Text(unit.one))],
                       onChanged: (unit) => setState(() => _newIngredientUnit = unit),
-                      validator: (unit) => unit == null ? 'Выберите единицу измерения' : null,
-                      decoration: const InputDecoration(labelText: 'Единица измерения'),
+                      validator: (unit) => unit == null ? l10n.ingredientDialogUnitRequired : null,
+                      decoration: InputDecoration(labelText: l10n.ingredientDialogUnitLabel, errorMaxLines: 2),
                     ),
                   TextFormField(
                     controller: _countController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-                    validator: validateIngredientCount,
-                    decoration: InputDecoration(labelText: 'Количество', suffixText: existing?.measureUnit.many),
+                    validator: (value) => validateIngredientCount(context.l10n, value),
+                    // Ошибка количества с примерами длиннее строки диалога, в одну строку она обрезалась бы
+                    decoration: InputDecoration(
+                      labelText: l10n.ingredientDialogCountLabel,
+                      suffixText: existing?.measureUnit.many,
+                      errorMaxLines: 2,
+                    ),
                   ),
                   Center(
                     child: FilledButton(
@@ -185,7 +204,7 @@ class _IngredientDialogState extends State<_IngredientDialog> {
                               dimension: 20,
                               child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.background),
                             )
-                          : Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
+                          : Text(widget.initial == null ? l10n.ingredientDialogAdd : l10n.ingredientDialogSave),
                     ),
                   ),
                 ],

@@ -16,6 +16,7 @@ import 'package:recipes/domain/repositories/object_detector.dart';
 import 'package:recipes/domain/repositories/photo_picker.dart';
 import 'package:recipes/domain/repositories/photo_source.dart';
 import 'package:recipes/domain/repositories/recipes_store.dart';
+import 'package:recipes/domain/repositories/settings_store.dart';
 
 /// Сетевой API для тестов
 ///
@@ -282,5 +283,28 @@ class FakePhotoPicker implements PhotoPicker {
     }
 
     return bytes;
+  }
+}
+
+/// Хранилище настроек в памяти для тестов
+class InMemorySettingsStore implements SettingsStore {
+  InMemorySettingsStore({this.languageCode, this.failOnSave = false});
+
+  /// Сохранённый код языка, открыт тестам для проверки записи
+  String? languageCode;
+
+  /// Имитация отказа записи на диск
+  final bool failOnSave;
+
+  @override
+  String? loadLanguageCode() => languageCode;
+
+  @override
+  Future<void> saveLanguageCode(String? code) async {
+    if (failOnSave) {
+      throw Exception('запись настроек не удалась');
+    }
+
+    languageCode = code;
   }
 }

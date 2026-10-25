@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   dio: ^5.11.0
   flutter_litert: ^3.9.4
@@ -17,6 +19,7 @@ dependencies:
   hive_ce_flutter: ^2.3.4
   image: ^4.12.0
   image_picker: ^1.2.4
+  intl: ^0.20.3
   rive: ^0.14.11
 
 dev_dependencies:
@@ -28,6 +31,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
   assets:
     - assets/images/
     - assets/rive/

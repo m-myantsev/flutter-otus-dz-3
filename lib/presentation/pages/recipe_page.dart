@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../data/photos/image_picker_photo_picker.dart';
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/repositories/photo_picker.dart';
 import '../../domain/repositories/photo_source.dart';
@@ -21,7 +21,7 @@ import 'recipe_images_page.dart';
 ///
 /// Отметки пройденных шагов локальны для страницы
 class RecipePage extends StatefulWidget {
-  const RecipePage({super.key, required this.manager, required this.recipe, this.picker});
+  const RecipePage({super.key, required this.manager, required this.recipe, required this.picker});
 
   /// Хранилище рецептов
   final RecipesManager manager;
@@ -29,13 +29,13 @@ class RecipePage extends StatefulWidget {
   /// Отображаемый рецепт
   final Recipe recipe;
 
-  /// Источник новых фото рецепта, по умолчанию системный пикер
-  final PhotoPicker? picker;
+  /// Источник новых фото рецепта
+  final PhotoPicker picker;
 
   /// Маршрут на эту страницу
-  static Route<void> route({required RecipesManager manager, required Recipe recipe}) {
+  static Route<void> route({required RecipesManager manager, required Recipe recipe, required PhotoPicker picker}) {
     return MaterialPageRoute(
-      builder: (_) => RecipePage(manager: manager, recipe: recipe),
+      builder: (_) => RecipePage(manager: manager, recipe: recipe, picker: picker),
     );
   }
 
@@ -48,9 +48,6 @@ class _RecipePageState extends State<RecipePage> {
   final Set<int> _checkedSteps = {};
 
   final _commentController = TextEditingController();
-
-  /// Источник новых фото, системный пикер создаётся лениво только при отсутствии `widget.picker`
-  late final PhotoPicker _picker = widget.picker ?? ImagePickerPhotoPicker();
 
   /// Добавляемое фото уже получено от пикера и анализируется менеджером
   bool _isAddingImage = false;
@@ -105,7 +102,7 @@ class _RecipePageState extends State<RecipePage> {
     // Удалять с плитки добавления нечего, поэтому пункт удаления не показывается
     final choice = await showPhotoSourceSheet(
       context,
-      canTakePhoto: _picker.supports(PhotoSource.camera),
+      canTakePhoto: widget.picker.supports(PhotoSource.camera),
       canDelete: false,
     );
 
@@ -120,7 +117,7 @@ class _RecipePageState extends State<RecipePage> {
     }
 
     try {
-      final bytes = await _picker.pick(source);
+      final bytes = await widget.picker.pick(source);
       // Индикатор включается только с готовыми байтами, иначе отмена выбора мигнула бы плиткой анализа
       if (bytes == null || !mounted) {
         return;
@@ -130,13 +127,13 @@ class _RecipePageState extends State<RecipePage> {
       // Миниатюра появится в ленте по уведомлению менеджера
       await widget.manager.addImage(widget.recipe.id, bytes);
     } on Exception catch (error) {
-      debugPrint('Не удалось добавить фото. $error');
+      debugPrint('Adding photo failed. $error');
 
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось добавить фото')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.recipePageAddPhotoFailed)));
     } finally {
       if (mounted) {
         setState(() => _isAddingImage = false);
@@ -161,13 +158,18 @@ class _RecipePageState extends State<RecipePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Рецепт',
-          style: TextStyle(fontFamily: 'Roboto', fontSize: 20, fontWeight: FontWeight.w400, color: AppColors.primary),
+        title: Text(
+          context.l10n.recipePageTitle,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: AppColors.primary,
+          ),
         ),
         actions: [
           // TODO: Реализовать вместе с публикацией рецепта
-          IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
+          IconButton(tooltip: context.l10n.recipePageShare, onPressed: () {}, icon: const Icon(Icons.share)),
         ],
       ),
       body: Center(
@@ -200,7 +202,7 @@ class _RecipePageState extends State<RecipePage> {
                   children: [
                     const Icon(Icons.access_time, size: 16, color: AppColors.text),
                     Text(
-                      formatDurationMinutes(recipe.duration),
+                      formatDurationMinutes(context.l10n, recipe.duration),
                       style: const TextStyle(fontSize: 16, color: AppColors.accent),
                     ),
                   ],
@@ -227,9 +229,9 @@ class _RecipePageState extends State<RecipePage> {
               ),
               const SizedBox(height: 17),
               padded(
-                const Text(
-                  'Ингредиенты',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
+                Text(
+                  context.l10n.recipePageIngredientsTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
                 ),
               ),
               const SizedBox(height: 18),
@@ -247,15 +249,15 @@ class _RecipePageState extends State<RecipePage> {
                     ),
                     // TODO: Реализовать вместе со списком продуктов в холодильнике
                     onPressed: () {},
-                    child: const Text('Проверить наличие'),
+                    child: Text(context.l10n.recipePageCheckAvailability),
                   ),
                 ),
               ),
               const SizedBox(height: 18),
               padded(
-                const Text(
-                  'Шаги приготовления',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
+                Text(
+                  context.l10n.recipePageStepsTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
                 ),
               ),
               const SizedBox(height: 20),
@@ -273,7 +275,7 @@ class _RecipePageState extends State<RecipePage> {
                     ),
                     // TODO: Реализовать вместе с таймером приготовления
                     onPressed: () {},
-                    child: const Text('Начать готовить'),
+                    child: Text(context.l10n.recipePageStartCooking),
                   ),
                 ),
               ),
@@ -291,7 +293,7 @@ class _RecipePageState extends State<RecipePage> {
                   keyboardType: TextInputType.multiline,
                   decoration: InputDecoration(
                     filled: false,
-                    hintText: 'оставить комментарий',
+                    hintText: context.l10n.recipePageCommentHint,
                     hintStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.placeholder),
                     contentPadding: const EdgeInsets.all(14),
                     enabledBorder: _commentBorder,
@@ -305,13 +307,17 @@ class _RecipePageState extends State<RecipePage> {
                         children: [
                           _commentIconButton(
                             icon: Icons.photo_size_select_actual,
-                            tooltip: 'Прикрепить фото',
+                            tooltip: context.l10n.recipePageAttachPhoto,
                             // TODO: Реализовать вместе с прикреплением фото к комментарию
                             // Результат намеренно игнорируется, пока прикреплять выбранное фото некуда
                             onPressed: () => showPhotoSourceSheet(context),
                           ),
                           if (value.text.trim().isNotEmpty)
-                            _commentIconButton(icon: Icons.send, tooltip: 'Отправить', onPressed: _submitComment)
+                            _commentIconButton(
+                              icon: Icons.send,
+                              tooltip: context.l10n.recipePageSendComment,
+                              onPressed: _submitComment,
+                            )
                           else
                             const SizedBox.square(dimension: _iconButtonSize),
                         ],
@@ -331,8 +337,11 @@ class _RecipePageState extends State<RecipePage> {
   Widget _buildIngredients() {
     final ingredients = widget.recipe.ingredients;
     if (ingredients.isEmpty) {
-      return const Center(
-        child: Text('нет ингредиентов', style: TextStyle(fontSize: 12, color: AppColors.text)),
+      return Center(
+        child: Text(
+          context.l10n.recipePageIngredientsEmpty,
+          style: const TextStyle(fontSize: 12, color: AppColors.text),
+        ),
       );
     }
 
@@ -372,8 +381,8 @@ class _RecipePageState extends State<RecipePage> {
   Widget _buildSteps() {
     final steps = widget.recipe.steps;
     if (steps.isEmpty) {
-      return const Center(
-        child: Text('нет шагов приготовления', style: TextStyle(fontSize: 12, color: AppColors.text)),
+      return Center(
+        child: Text(context.l10n.recipePageStepsEmpty, style: const TextStyle(fontSize: 12, color: AppColors.text)),
       );
     }
 

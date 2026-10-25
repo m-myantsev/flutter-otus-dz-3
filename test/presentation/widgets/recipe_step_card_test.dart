@@ -5,6 +5,8 @@ import 'package:recipes/domain/entities/recipe_step.dart';
 import 'package:recipes/presentation/theme/app_colors.dart';
 import 'package:recipes/presentation/widgets/recipe_step_card.dart';
 
+import '../../helpers.dart';
+
 void main() {
   group('RecipeStepCard', () {
     /// Текст заведомо ниже карточки минимальной высоты
@@ -40,9 +42,8 @@ void main() {
     /// Выводит карточку шага на экран в отведённой ширине
     Future<void> pumpCard(WidgetTester tester, String name, {required double width}) {
       return tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Center(
+        localizedApp(
+          Center(
             child: SizedBox(
               width: width,
               child: RecipeStepCard(
@@ -74,9 +75,8 @@ void main() {
       var checked = false;
 
       await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Center(
+        localizedApp(
+          Center(
             child: StatefulBuilder(
               builder: (context, setState) => SizedBox(
                 width: 400,
@@ -152,9 +152,8 @@ void main() {
       /// Выводит карточку, отметку которой переключает тап по ней
       Future<Finder> pumpToggleable(WidgetTester tester, {bool checked = false}) async {
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: Center(
+          localizedApp(
+            Center(
               child: StatefulBuilder(
                 builder: (context, setState) => SizedBox(
                   width: 400,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../data/photos/image_picker_photo_picker.dart';
+import '../../core/l10n/l10n_context.dart';
 import '../../domain/entities/recipe_image.dart';
 import '../../domain/entities/recipe_ingredient.dart';
 import '../../domain/entities/recipe_step.dart';
@@ -22,19 +22,19 @@ import 'recipe_images_page.dart';
 
 /// Страница создания нового рецепта
 class AddRecipePage extends StatefulWidget {
-  const AddRecipePage({super.key, required this.manager, this.picker});
+  const AddRecipePage({super.key, required this.manager, required this.picker});
 
   /// Хранилище рецептов
   final RecipesManager manager;
 
   /// Источник фото рецепта
-  ///
-  /// По умолчанию системный пикер
-  final PhotoPicker? picker;
+  final PhotoPicker picker;
 
   /// Маршрут на эту страницу
-  static Route<void> route({required RecipesManager manager}) {
-    return MaterialPageRoute(builder: (_) => AddRecipePage(manager: manager));
+  static Route<void> route({required RecipesManager manager, required PhotoPicker picker}) {
+    return MaterialPageRoute(
+      builder: (_) => AddRecipePage(manager: manager, picker: picker),
+    );
   }
 
   @override
@@ -51,11 +51,6 @@ class _AddRecipePageState extends State<AddRecipePage> {
   ///
   /// У рецепта ещё нет идентификатора, поэтому они живут в форме до сохранения
   final _images = ValueNotifier<List<RecipeImage>>(const []);
-
-  /// Источник новых фото
-  ///
-  /// Системный пикер создаётся лениво только при отсутствии `widget.picker`
-  late final PhotoPicker _picker = widget.picker ?? ImagePickerPhotoPicker();
 
   /// Идёт сохранение рецепта
   bool _isSaving = false;
@@ -91,7 +86,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
     // Удалять с плитки добавления нечего, поэтому пункт удаления не показывается
     final choice = await showPhotoSourceSheet(
       context,
-      canTakePhoto: _picker.supports(PhotoSource.camera),
+      canTakePhoto: widget.picker.supports(PhotoSource.camera),
       canDelete: false,
     );
 
@@ -106,7 +101,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
     }
 
     try {
-      final bytes = await _picker.pick(source);
+      final bytes = await widget.picker.pick(source);
       // Индикатор включается только с готовыми байтами, иначе отмена выбора мигнула бы плиткой анализа
       if (bytes == null || !mounted) {
         return;
@@ -121,13 +116,13 @@ class _AddRecipePageState extends State<AddRecipePage> {
 
       _images.value = [..._images.value, image];
     } on Exception catch (error) {
-      debugPrint('Не удалось добавить фото. $error');
+      debugPrint('Adding photo failed. $error');
 
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось добавить фото')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.addRecipeAddPhotoFailed)));
     } finally {
       if (mounted) {
         setState(() => _isAnalyzing = false);
@@ -186,8 +181,10 @@ class _AddRecipePageState extends State<AddRecipePage> {
       return;
     }
 
-    // Захвачен до ожидания записи, он принадлежит `MaterialApp` и покажет сообщение уже после закрытия формы
+    // Захвачены до ожидания записи, потому что после закрытия формы её контекст уже не годится, а мессенджер
+    // принадлежит `MaterialApp` и покажет сообщение и тогда
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     setState(() => _isSaving = true);
 
     try {
@@ -199,8 +196,8 @@ class _AddRecipePageState extends State<AddRecipePage> {
       );
     } on RecipeImagesSaveException catch (error) {
       // Рецепт уже в списке, повторное сохранение создало бы дубль, поэтому форма закрывается как после успеха
-      debugPrint('Рецепт сохранён без фото. $error');
-      messenger.showSnackBar(const SnackBar(content: Text('Рецепт сохранён без фото')));
+      debugPrint('Recipe saved without photos. $error');
+      messenger.showSnackBar(SnackBar(content: Text(l10n.addRecipeSavedWithoutPhotos)));
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -226,9 +223,14 @@ class _AddRecipePageState extends State<AddRecipePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Новый рецепт',
-          style: TextStyle(fontFamily: 'Roboto', fontSize: 20, fontWeight: FontWeight.w400, color: AppColors.primary),
+        title: Text(
+          context.l10n.addRecipeTitle,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: AppColors.primary,
+          ),
         ),
       ),
       body: Center(
@@ -246,9 +248,9 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   padded(
                     TextFormField(
                       controller: _nameController,
-                      validator: validateRecipeName,
+                      validator: (value) => validateRecipeName(context.l10n, value),
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      decoration: const InputDecoration(labelText: 'Название рецепта'),
+                      decoration: InputDecoration(labelText: context.l10n.addRecipeNameLabel),
                     ),
                   ),
                   Column(
@@ -272,15 +274,18 @@ class _AddRecipePageState extends State<AddRecipePage> {
                     ],
                   ),
                   padded(
-                    const Text(
-                      'Ингредиенты',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
+                    Text(
+                      context.l10n.addRecipeIngredientsTitle,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
                     ),
                   ),
                   if (_ingredients.isEmpty)
                     padded(
-                      const Center(
-                        child: Text('нет ингредиентов', style: TextStyle(fontSize: 12, color: AppColors.text)),
+                      Center(
+                        child: Text(
+                          context.l10n.addRecipeIngredientsEmpty,
+                          style: const TextStyle(fontSize: 12, color: AppColors.text),
+                        ),
                       ),
                     )
                   else
@@ -310,20 +315,23 @@ class _AddRecipePageState extends State<AddRecipePage> {
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                         onPressed: _isSaving ? null : _addIngredient,
-                        child: const Text('Добавить ингредиент'),
+                        child: Text(context.l10n.addRecipeAddIngredient),
                       ),
                     ),
                   ),
                   padded(
-                    const Text(
-                      'Шаги приготовления',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
+                    Text(
+                      context.l10n.addRecipeStepsTitle,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.primary),
                     ),
                   ),
                   if (_steps.isEmpty)
                     padded(
-                      const Center(
-                        child: Text('нет шагов приготовления', style: TextStyle(fontSize: 12, color: AppColors.text)),
+                      Center(
+                        child: Text(
+                          context.l10n.addRecipeStepsEmpty,
+                          style: const TextStyle(fontSize: 12, color: AppColors.text),
+                        ),
                       ),
                     )
                   else
@@ -353,7 +361,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                         onPressed: _isSaving ? null : _addStep,
-                        child: const Text('Добавить шаг'),
+                        child: Text(context.l10n.addRecipeAddStep),
                       ),
                     ),
                   ),
@@ -374,7 +382,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                                 dimension: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.background),
                               )
-                            : const Text('Сохранить рецепт'),
+                            : Text(context.l10n.addRecipeSave),
                       ),
                     ),
                   ),

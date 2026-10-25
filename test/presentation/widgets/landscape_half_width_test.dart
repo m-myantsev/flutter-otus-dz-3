@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recipes/presentation/widgets/landscape_half_width.dart';
 
+import '../../helpers.dart';
+
 void main() {
   group('LandscapeHalfWidth', () {
     /// Ширина, которую получает содержимое на `surface` заданного размера
@@ -9,9 +11,8 @@ void main() {
       double? width;
 
       await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Center(
+        localizedApp(
+          Center(
             child: SizedBox.fromSize(
               size: surface,
               child: LandscapeHalfWidth(

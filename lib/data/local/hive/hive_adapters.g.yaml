@@ -59,7 +59,7 @@ types:
         index: 1
   Comment:
     typeId: 5
-    nextIndex: 5
+    nextIndex: 6
     fields:
       author:
         index: 0
@@ -71,6 +71,8 @@ types:
         index: 3
       photo:
         index: 4
+      isOwn:
+        index: 5
   RecipeImage:
     typeId: 6
     nextIndex: 2

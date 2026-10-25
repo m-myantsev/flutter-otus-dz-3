@@ -15,7 +15,7 @@ import 'model_output.dart';
 /// Бросает [ObjectDetectionException], если фото не декодируется
 List<DetectedObject> runModel(int interpreterAddress, List<String> labels, Uint8List jpeg) {
   final input = prepareModelInput(jpeg);
-  if (input == null) throw const ObjectDetectionException('Фото не декодируется');
+  if (input == null) throw const ObjectDetectionException('Photo cannot be decoded');
 
   final interpreter = Interpreter.fromAddress(interpreterAddress, allocated: true);
 

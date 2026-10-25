@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart' as rive;
 
+import '../../core/l10n/l10n_context.dart';
 import '../theme/app_colors.dart';
 
 /// Кнопка избранного
@@ -80,7 +81,7 @@ class FavoriteButtonState extends State<FavoriteButton> {
 
     final file = await rive.File.asset(_HeartRive.asset, riveFactory: rive.Factory.flutter, bundle: bundle);
     if (file == null) {
-      throw StateError('Файл ${_HeartRive.asset} не загрузился');
+      throw StateError('Failed to load ${_HeartRive.asset}');
     }
 
     if (!mounted) {
@@ -107,7 +108,7 @@ class FavoriteButtonState extends State<FavoriteButton> {
       viewModel.dispose();
       controller.dispose();
       file.dispose();
-      throw StateError('В view model файла ${_HeartRive.asset} нет булева свойства ${_HeartRive.checkedProperty}');
+      throw StateError('View model of ${_HeartRive.asset} has no boolean property ${_HeartRive.checkedProperty}');
     }
 
     checked.value = widget.isFavorite;
@@ -151,7 +152,7 @@ class FavoriteButtonState extends State<FavoriteButton> {
       button: true,
       enabled: true,
       selected: widget.isFavorite,
-      label: widget.isFavorite ? 'В избранном' : 'Добавить в избранное',
+      label: widget.isFavorite ? context.l10n.favoriteActive : context.l10n.favoriteAdd,
       child: GestureDetector(
         onTap: widget.onPressed,
         behavior: HitTestBehavior.opaque,
