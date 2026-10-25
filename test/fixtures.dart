@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
-import 'package:recipes/models/comment.dart';
-import 'package:recipes/models/detected_object.dart';
-import 'package:recipes/models/detection_box.dart';
-import 'package:recipes/models/food_data.dart';
-import 'package:recipes/models/ingredient.dart';
-import 'package:recipes/models/measure_unit.dart';
-import 'package:recipes/models/recipe.dart';
-import 'package:recipes/models/recipe_image.dart';
-import 'package:recipes/models/recipe_ingredient.dart';
-import 'package:recipes/models/recipe_step.dart';
+import 'package:recipes/domain/entities/comment.dart';
+import 'package:recipes/domain/entities/detected_object.dart';
+import 'package:recipes/domain/entities/detection_box.dart';
+import 'package:recipes/domain/entities/food_data.dart';
+import 'package:recipes/domain/entities/ingredient.dart';
+import 'package:recipes/domain/entities/measure_unit.dart';
+import 'package:recipes/domain/entities/recipe.dart';
+import 'package:recipes/domain/entities/recipe_image.dart';
+import 'package:recipes/domain/entities/recipe_ingredient.dart';
+import 'package:recipes/domain/entities/recipe_step.dart';
 
 const MeasureUnit tablespoon = MeasureUnit(id: 0, one: 'ст. ложка', few: 'ст. ложки', many: 'ст. ложек');
 const MeasureUnit teaspoon = MeasureUnit(id: 1, one: 'ч. ложка', few: 'ч. ложки', many: 'ч. ложек');

@@ -1,21 +1,22 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:recipes/api/food_api.dart';
-import 'package:recipes/data/photo_picker.dart';
-import 'package:recipes/data/photo_source.dart';
-import 'package:recipes/data/recipes_store.dart';
-import 'package:recipes/models/comment.dart';
-import 'package:recipes/models/detected_object.dart';
-import 'package:recipes/models/food_data.dart';
-import 'package:recipes/models/ingredient.dart';
-import 'package:recipes/models/measure_unit.dart';
-import 'package:recipes/models/recipe.dart';
-import 'package:recipes/models/recipe_image.dart';
-import 'package:recipes/models/recipe_ingredient.dart';
-import 'package:recipes/models/recipe_step.dart';
-import 'package:recipes/vision/object_detection_exception.dart';
-import 'package:recipes/vision/object_detector.dart';
+import 'package:recipes/domain/entities/comment.dart';
+import 'package:recipes/domain/entities/detected_object.dart';
+import 'package:recipes/domain/entities/food_data.dart';
+import 'package:recipes/domain/entities/ingredient.dart';
+import 'package:recipes/domain/entities/measure_unit.dart';
+import 'package:recipes/domain/entities/recipe.dart';
+import 'package:recipes/domain/entities/recipe_image.dart';
+import 'package:recipes/domain/entities/recipe_ingredient.dart';
+import 'package:recipes/domain/entities/recipe_step.dart';
+import 'package:recipes/domain/exceptions/object_detection_exception.dart';
+import 'package:recipes/domain/repositories/food_api.dart';
+import 'package:recipes/domain/repositories/object_detector.dart';
+import 'package:recipes/domain/repositories/photo_picker.dart';
+import 'package:recipes/domain/repositories/photo_source.dart';
+import 'package:recipes/domain/repositories/recipes_store.dart';
+import 'package:recipes/domain/repositories/settings_store.dart';
 
 /// Сетевой API для тестов
 ///
@@ -282,5 +283,28 @@ class FakePhotoPicker implements PhotoPicker {
     }
 
     return bytes;
+  }
+}
+
+/// Хранилище настроек в памяти для тестов
+class InMemorySettingsStore implements SettingsStore {
+  InMemorySettingsStore({this.languageCode, this.failOnSave = false});
+
+  /// Сохранённый код языка, открыт тестам для проверки записи
+  String? languageCode;
+
+  /// Имитация отказа записи на диск
+  final bool failOnSave;
+
+  @override
+  String? loadLanguageCode() => languageCode;
+
+  @override
+  Future<void> saveLanguageCode(String? code) async {
+    if (failOnSave) {
+      throw Exception('запись настроек не удалась');
+    }
+
+    languageCode = code;
   }
 }

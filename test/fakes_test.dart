@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:recipes/models/recipe.dart';
+import 'package:recipes/domain/entities/recipe.dart';
 
 import 'fakes.dart';
 import 'fixtures.dart';
